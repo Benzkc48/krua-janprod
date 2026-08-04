@@ -1181,12 +1181,11 @@
           <div><b>ค่าจัดส่งชำระปลายทาง</b> กับพนักงานส่งอาหาร ทีมงานจะโทรยืนยันออเดอร์และแจ้งเวลาจัดส่งอีกครั้ง</div>
         </div>
         <div class="delivery-note" style="text-align:left;">
-          <span class="ic">🔒</span>
-          <div><b>ล็อครายการ+ราคาไว้แล้ว</b> กดส่งเข้า LINE ร้านด้านล่าง ข้อความนี้จะถูกเก็บเป็นหลักฐานออเดอร์ของคุณ ทั้งฝั่งร้านและลูกค้าเห็นตรงกัน ป้องกันการเข้าใจผิดเรื่องรายการหรือราคา</div>
+          <span class="ic">✅</span>
+          <div><b>ส่งเข้า LINE ร้านให้อัตโนมัติแล้ว</b> ทีมงานได้รับข้อความออเดอร์นี้ทันที จะโทรยืนยันออเดอร์และแจ้งเวลาจัดส่งอีกครั้ง</div>
         </div>
         <div style="display:flex;gap:10px;margin-top:14px;">
-          <button type="button" class="btn-ghost" id="copyOrderBtn" style="flex:1;justify-content:center;">📋 คัดลอกออเดอร์</button>
-          <a href="#" class="btn-primary" id="sendLineBtn" style="flex:1;justify-content:center;text-decoration:none;">💬 ส่งเข้า LINE ร้าน</a>
+          <button type="button" class="btn-ghost" id="copyOrderBtn" style="flex:1;justify-content:center;">📋 คัดลอกออเดอร์ (สำรองไว้)</button>
         </div>
         <button class="btn-primary" id="closeSuccessBtn" style="margin-top:10px;width:100%;justify-content:center;">กลับไปสั่งเมนูอื่นต่อ</button>
       </div>
@@ -1596,12 +1595,6 @@ document.getElementById("copyOrderBtn").addEventListener("click", async ()=>{
   }catch(e){
     showToast("⚠ คัดลอกไม่สำเร็จ ลองแตะค้างที่ข้อความแทน");
   }
-});
-
-document.getElementById("sendLineBtn").addEventListener("click", (e)=>{
-  e.preventDefault();
-  const url = "https://line.me/R/msg/text/?" + encodeURIComponent(lastOrderText);
-  window.open(url, "_blank");
 });
 
 document.getElementById("closeSuccessBtn").addEventListener("click", ()=>{
