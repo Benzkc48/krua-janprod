@@ -805,6 +805,7 @@
   .admin-order-head .time{font-size:0.76rem;color:var(--brown-soft);}
   .admin-order-items{font-size:0.86rem;color:var(--brown-soft);white-space:pre-line;}
   .admin-order-cust{font-size:0.82rem;color:var(--brown);}
+  .admin-order-source{font-size:0.78rem;color:#999;margin-top:2px;}
   .admin-order-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px;}
   .admin-order-total{font-weight:800;color:var(--red-deep);}
   .status-badge{
@@ -1254,6 +1255,14 @@
 
 <script>
 /* =========================================================
+   แจ้งเตือนออเดอร์เข้า LINE ร้านอัตโนมัติ
+   วาง URL ของ Cloudflare Worker ที่ deploy ไว้ (ดูวิธีใน line-order-worker.js)
+   เช่น "https://krua-janprod-line.yourname.workers.dev"
+   ถ้ายังไม่ตั้งค่า (เว้นว่างไว้) ระบบจะข้ามการแจ้งเตือนไปเงียบๆ
+   ========================================================= */
+const LINE_WORKER_URL = "https://krua-janprod-line.nantawat250142.workers.dev"; // Cloudflare Worker แจ้งเตือนออเดอร์เข้า LINE ร้าน
+
+/* =========================================================
    แก้ไขเมนู/ราคาได้ที่นี่ — เปลี่ยนตัวเลข price ตามใจได้เลย
    ========================================================= */
 const MENU_ITEMS = [
@@ -1557,9 +1566,21 @@ document.getElementById("submitOrderBtn").addEventListener("click", async ()=>{
       subtotal: subtotal,
       customer: { name, phone, address, note },
       payMethod: payMethod,
+      source: "เว็บไซต์",
       status: "new"
     });
   }catch(e){ console.error("บันทึกออเดอร์ไม่สำเร็จ", e); }
+
+  /* แจ้งเตือนเข้า LINE ร้าน (ถ้าตั้งค่า LINE_WORKER_URL ไว้แล้ว) */
+  if(LINE_WORKER_URL){
+    try{
+      await fetch(LINE_WORKER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: lastOrderText })
+      });
+    }catch(e){ console.error("แจ้งเตือน LINE ไม่สำเร็จ", e); }
+  }
 
   document.getElementById("checkoutForm").style.display = "none";
   document.getElementById("checkoutSuccess").style.display = "block";
@@ -1703,6 +1724,7 @@ toppingOverlay.addEventListener("click",(e)=>{
         </div>
         <div class="admin-order-items">${itemsText}</div>
         <div class="admin-order-cust">👤 ${o.customer?.name||"-"} · 📞 ${o.customer?.phone||"-"} · ${o.payMethod||""}</div>
+        <div class="admin-order-source">📥 ช่องทาง: ${o.source||"เว็บไซต์"}</div>
         <div class="admin-order-foot">
           <span class="admin-order-total">${(o.subtotal||0).toLocaleString("th-TH")} บาท</span>
           <select class="status-select" data-code="${o.code}">
