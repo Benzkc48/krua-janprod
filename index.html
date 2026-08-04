@@ -1223,7 +1223,7 @@
     </div>
     <button class="checkout-btn" id="adminLoginBtn" style="width:100%;">เข้าสู่ระบบ</button>
     <div class="admin-err" id="adminLoginErr">รหัสผ่านไม่ถูกต้อง ลองใหม่อีกครั้ง</div>
-    <div class="admin-note">รหัสผ่านเริ่มต้นตั้งไว้ในไฟล์เว็บไซต์ (แก้ไขได้ในโค้ด ตัวแปร ADMIN_PIN) หน้านี้ทำงานได้เต็มรูปแบบเมื่อเปิดผ่าน Claude — ถ้านำโค้ดไปติดตั้งบนเว็บโฮสต์ของร้านเอง ระบบเก็บออเดอร์จะต้องต่อกับฐานข้อมูล/เซิร์ฟเวอร์จริงเพิ่มเติม</div>
+    <div class="admin-note">รหัสผ่านเริ่มต้นตั้งไว้ในไฟล์เว็บไซต์ (แก้ไขได้ในโค้ด ตัวแปร ADMIN_PIN — ต้องแก้ให้ตรงกันทั้งฝั่งเว็บและฝั่ง Worker) ระบบนี้ใช้งานได้จริงไม่ว่าจะเปิดผ่าน Claude หรือโฮสต์เว็บเองก็ตาม</div>
   </div>
 </div>
 
@@ -1573,12 +1573,18 @@ document.getElementById("submitOrderBtn").addEventListener("click", async ()=>{
   /* แจ้งเตือนเข้า LINE ร้าน (ถ้าตั้งค่า LINE_WORKER_URL ไว้แล้ว) */
   if(LINE_WORKER_URL){
     try{
-      await fetch(LINE_WORKER_URL, {
+      const lineRes = await fetch(LINE_WORKER_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: lastOrderText })
       });
-    }catch(e){ console.error("แจ้งเตือน LINE ไม่สำเร็จ", e); }
+      const lineData = await lineRes.json().catch(()=>({}));
+      if(!lineRes.ok || lineData.ok === false){
+        console.error("แจ้งเตือน LINE ไม่สำเร็จ — สถานะ:", lineRes.status, "รายละเอียด:", lineData);
+      }else{
+        console.log("แจ้งเตือน LINE สำเร็จ", lineData);
+      }
+    }catch(e){ console.error("แจ้งเตือน LINE ไม่สำเร็จ (เชื่อมต่อ Worker ไม่ได้)", e); }
   }
 
   document.getElementById("checkoutForm").style.display = "none";
@@ -1625,17 +1631,14 @@ toppingOverlay.addEventListener("click",(e)=>{
 
 /* =========================================================
    ระบบหลังบ้านสำหรับร้าน (Admin / Back-office)
-   - เก็บออเดอร์แบบ shared storage เพื่อให้ทุกคนที่เข้าหน้านี้ผ่าน Claude
-     เห็นออเดอร์ตรงกัน (คงอยู่ต่อเนื่องข้ามการเปิดหน้าเว็บใหม่)
-   - แก้รหัสผ่านร้านได้ที่ตัวแปร ADMIN_PIN ด้านล่าง
-   ⚠ ข้อควรทราบ: ระบบนี้ทำงานเต็มรูปแบบเมื่อเปิดผ่าน Claude เท่านั้น
-     (ใช้ window.storage ของ Claude Artifact) หากนำไฟล์นี้ไปโฮสต์เอง
-     จะต้องเชื่อมกับฐานข้อมูล/เซิร์ฟเวอร์จริงแทน
+   - เก็บออเดอร์ผ่าน Cloudflare Worker + KV (ตัวเดียวกับที่ใช้ส่งแจ้งเตือน
+     เข้า LINE) ใช้งานได้จริงไม่ว่าจะเปิดเว็บผ่าน Claude หรือโฮสต์เองก็ตาม
+   - แก้รหัสผ่านร้านได้ที่ตัวแปร ADMIN_PIN ด้านล่าง — ต้องตั้งค่าให้ตรงกับ
+     ตัวแปร ADMIN_PIN บน Cloudflare Worker ด้วย (ดูวิธีใน line-order-worker.js)
    ========================================================= */
 (function(){
-  const ADMIN_PIN = "0428"; // แก้รหัสผ่านร้านได้ที่นี่
-  const ORDER_INDEX_KEY = "order-index";
-  const STORAGE_OK = typeof window.storage !== "undefined";
+  const ADMIN_PIN = "0428"; // แก้รหัสผ่านร้านได้ที่นี่ (ต้องตรงกับฝั่ง Worker ด้วย)
+  const STORAGE_OK = !!LINE_WORKER_URL;
 
   const loginOverlay = document.getElementById("adminLoginOverlay");
   const dashOverlay = document.getElementById("adminDashOverlay");
@@ -1649,32 +1652,30 @@ toppingOverlay.addEventListener("click",(e)=>{
 
   window.saveOrderRecord = async function(order){
     if(!STORAGE_OK) return; // เงียบไว้ ไม่ให้กระทบการสั่งซื้อของลูกค้า
-    await window.storage.set("order:" + order.code, JSON.stringify(order), true);
-    let idx = [];
     try{
-      const r = await window.storage.get(ORDER_INDEX_KEY, true);
-      idx = r ? JSON.parse(r.value) : [];
-    }catch(e){ idx = []; }
-    if(!idx.includes(order.code)) idx.push(order.code);
-    await window.storage.set(ORDER_INDEX_KEY, JSON.stringify(idx), true);
+      await fetch(LINE_WORKER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "save_order", order })
+      });
+    }catch(e){ console.error("บันทึกออเดอร์ไม่สำเร็จ", e); }
   };
 
   async function fetchAllOrders(){
     if(!STORAGE_OK) return [];
-    let idx = [];
     try{
-      const r = await window.storage.get(ORDER_INDEX_KEY, true);
-      idx = r ? JSON.parse(r.value) : [];
-    }catch(e){ idx = []; }
-    const orders = [];
-    for(const code of idx){
-      try{
-        const r = await window.storage.get("order:" + code, true);
-        if(r) orders.push(JSON.parse(r.value));
-      }catch(e){ /* ข้ามออเดอร์ที่อ่านไม่ได้ */ }
+      const url = LINE_WORKER_URL + "?orders=1&pin=" + encodeURIComponent(ADMIN_PIN);
+      const res = await fetch(url);
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok || data.ok === false){
+        console.error("ดึงรายการออเดอร์ไม่สำเร็จ", data);
+        return [];
+      }
+      return (data.orders || []).sort((a,b)=> (b.timestamp||0) - (a.timestamp||0));
+    }catch(e){
+      console.error("เชื่อมต่อระบบออเดอร์ไม่ได้", e);
+      return [];
     }
-    orders.sort((a,b)=> b.timestamp - a.timestamp);
-    return orders;
   }
 
   function isSameDay(ts, ref){
@@ -1734,11 +1735,16 @@ toppingOverlay.addEventListener("click",(e)=>{
         const code = e.target.dataset.code;
         const newStatus = e.target.value;
         try{
-          const r = await window.storage.get("order:" + code, true);
-          if(!r) return;
-          const order = JSON.parse(r.value);
-          order.status = newStatus;
-          await window.storage.set("order:" + code, JSON.stringify(order), true);
+          const res = await fetch(LINE_WORKER_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "update_status", code, status: newStatus, pin: ADMIN_PIN })
+          });
+          const data = await res.json().catch(()=>({}));
+          if(!res.ok || data.ok === false){
+            showToast("⚠ อัปเดตสถานะไม่สำเร็จ");
+            return;
+          }
           showToast("✓ อัปเดตสถานะออเดอร์แล้ว");
           loadDashboard(true);
         }catch(err){ showToast("⚠ อัปเดตสถานะไม่สำเร็จ"); }
@@ -1748,7 +1754,7 @@ toppingOverlay.addEventListener("click",(e)=>{
 
   async function loadDashboard(silent){
     if(!STORAGE_OK){
-      ordersList.innerHTML = `<div class="admin-empty">ไม่พบระบบเก็บข้อมูล — หน้านี้ต้องเปิดผ่าน Claude เพื่อใช้งานหลังบ้านได้เต็มรูปแบบ</div>`;
+      ordersList.innerHTML = `<div class="admin-empty">ยังไม่ได้ตั้งค่า LINE_WORKER_URL ที่ต้นไฟล์นี้ — ระบบหลังบ้านจะใช้งานไม่ได้จนกว่าจะใส่ URL ของ Cloudflare Worker</div>`;
       return;
     }
     const orders = await fetchAllOrders();
