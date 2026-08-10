@@ -113,7 +113,7 @@
   .header-quick-actions{display:none;}
   @media (max-width:720px){
     .header-quick-actions{
-      display:grid;grid-template-columns:1fr 1fr;gap:8px;
+      display:grid;grid-template-columns:1fr;gap:8px;
       padding:0 14px 12px;
     }
     .hqa-btn{
@@ -1220,6 +1220,24 @@
     background:var(--brown);color:#fff;border:none;padding:8px 16px;border-radius:999px;
     font-weight:700;font-size:0.78rem;box-shadow:var(--clay-out-sm);
   }
+  /* ---------- checkout: GPS pin for delivery address ---------- */
+  .geo-pin-btn{
+    display:inline-flex;align-items:center;gap:6px;
+    margin-top:8px;padding:9px 16px;border-radius:999px;border:none;
+    background:var(--cream-deep);color:var(--brown);font-family:inherit;
+    font-weight:700;font-size:0.82rem;box-shadow:var(--clay-out-sm);
+  }
+  .geo-pin-btn:disabled{opacity:0.6;}
+  .geo-pin-result{margin-top:10px;font-size:0.8rem;color:var(--brown-soft);}
+  .geo-pin-ok{color:var(--green-ok);font-weight:700;margin-bottom:8px;}
+  .geo-pin-map{
+    width:100%;height:180px;border:none;border-radius:var(--radius-sm);
+    box-shadow:var(--clay-out-sm);display:block;
+  }
+  .admin-order-geo{
+    display:inline-flex;align-items:center;gap:5px;margin-top:2px;
+    font-size:0.78rem;font-weight:700;color:var(--red-deep);text-decoration:none;
+  }
   </style>
 </head>
 <body>
@@ -1272,11 +1290,11 @@
     </div>
     <nav class="mainnav">
       <a href="#menu-eggrice">ข้าวไข่ข้น</a>
-      <a href="#menu-mama">มาม่าเกาหลี</a>
+      <a href="#menu-mama" style="display:none;">มาม่าเกาหลี</a>
       <a href="#how">วิธีสั่ง</a>
       <a href="#contact">ติดต่อร้าน</a>
       <a href="#" id="trackOrderNavBtn">📦 ติดตามออเดอร์</a>
-      <a href="#" id="pointsNavBtn">🎁 แต้มสะสม</a>
+      <a href="#" id="pointsNavBtn" style="display:none;">🎁 แต้มสะสม</a>
     </nav>
     <button class="cart-btn" id="cartOpenBtn" aria-haspopup="dialog">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
@@ -1286,7 +1304,7 @@
   </div>
   <div class="header-quick-actions" id="headerQuickActions">
     <a href="#" id="quickTrackBtn" class="hqa-btn hqa-track"><span class="ic">📦</span><span>ติดตามออเดอร์</span></a>
-    <a href="#" id="quickPointsBtn" class="hqa-btn hqa-points"><span class="ic">🎁</span><span>เช็คแต้มสะสม</span></a>
+    <a href="#" id="quickPointsBtn" class="hqa-btn hqa-points" style="display:none;"><span class="ic">🎁</span><span>เช็คแต้มสะสม</span></a>
   </div>
 </header>
 
@@ -1385,6 +1403,7 @@
     </div>
   </div>
 
+<!-- hs-slide--mama ซ่อนไว้ชั่วคราว (เมนูมาม่าเกาหลีปิดไว้ก่อน)
   <div class="hs-slide hs-slide--mama" data-slide="1">
     <div class="hs-word hs-word--light">เกาหลี</div>
     <div class="hs-inner">
@@ -1413,6 +1432,7 @@
       </div>
     </div>
   </div>
+-->
 
   <div class="hs-slide hs-slide--promo" data-slide="2">
     <div class="hs-word hs-word--dark">โปรด</div>
@@ -1437,7 +1457,7 @@
   <button class="hs-arrow hs-next" id="hsNext" aria-label="สไลด์ถัดไป">›</button>
   <div class="hs-dots" id="hsDots">
     <button class="hs-dot active" data-goto="0" aria-label="สไลด์ที่ 1"></button>
-    <button class="hs-dot" data-goto="1" aria-label="สไลด์ที่ 2"></button>
+    <!-- <button class="hs-dot" data-goto="1" aria-label="สไลด์ที่ 2"></button> (คู่กับสไลด์มาม่าที่ซ่อนไว้) -->
     <button class="hs-dot" data-goto="2" aria-label="สไลด์ที่ 3"></button>
   </div>
 </section>
@@ -1462,12 +1482,12 @@
   <div class="section-head reveal-up">
     <span class="kicker">เมนูของเรา</span>
     <h2>เมนูทั้งหมด 🍽️</h2>
-    <p>เลือกได้ทั้งข้าวไข่ข้นและมาม่าเกาหลี ปรุงสดใหม่ทุกออเดอร์ กดแท็บเพื่อกรองเมนูที่สนใจ</p>
+    <p>เลือกเมนูที่อยากกิน ปรุงสดใหม่ทุกออเดอร์</p>
   </div>
   <div class="tabs" id="menuAllTabs">
     <button class="tab-btn active" data-cat="all">ทั้งหมด</button>
     <button class="tab-btn" data-cat="eggrice">ข้าวไข่ข้น 🍳</button>
-    <button class="tab-btn" data-cat="mama">มาม่าเกาหลี 🍜</button>
+    <button class="tab-btn" data-cat="mama" style="display:none;">มาม่าเกาหลี 🍜</button>
   </div>
   <div class="menu-grid" id="grid-all"></div>
 </section>
@@ -1494,7 +1514,7 @@
 </section>
 
 <!-- ================= MENU: มาม่าเกาหลี ================= -->
-<section class="section" id="menu-mama">
+<section class="section" id="menu-mama" style="display:none;">
   <div class="section-head reveal-up">
     <span class="kicker">เผ็ดแซ่บ สไตล์เกาหลี</span>
     <h2>มาม่าเกาหลี 🍜</h2>
@@ -1538,13 +1558,13 @@
           <div class="name">ครัวจานโปรด</div>
         </div>
       </div>
-      <p class="desc">ข้าวไข่ข้นและมาม่าเกาหลี ทำสดใหม่ทุกออเดอร์ ส่งตรงถึงหน้าบ้านคุณ อร่อย คุ้ม ทำด้วยใจทุกจาน</p>
+      <p class="desc">ข้าวไข่ข้นสูตรเด็ด ทำสดใหม่ทุกออเดอร์ ส่งตรงถึงหน้าบ้านคุณ อร่อย คุ้ม ทำด้วยใจทุกจาน</p>
     </div>
     <div>
       <h5>เมนู</h5>
       <ul>
         <li><a href="#menu-eggrice">ข้าวไข่ข้น</a></li>
-        <li><a href="#menu-mama">มาม่าเกาหลี</a></li>
+        <li style="display:none;"><a href="#menu-mama">มาม่าเกาหลี</a></li>
         <li><a href="#how">วิธีสั่งอาหาร</a></li>
       </ul>
     </div>
@@ -1565,7 +1585,7 @@
   </div>
   <div class="footer-bottom">
     <span>© 2026 ครัวจานโปรด. สงวนลิขสิทธิ์.</span>
-    <span>ค่าจัดส่งชำระปลายทางกับพนักงานส่งอาหาร · <a href="#" id="trackOrderFootBtn" style="color:inherit;text-decoration:underline;">ติดตามออเดอร์</a> · <a href="#" id="pointsFootBtn" style="color:inherit;text-decoration:underline;">เช็คแต้มสะสม</a> · <a href="#" id="adminOpenBtn" style="color:inherit;text-decoration:underline;">สำหรับร้านค้า</a></span>
+    <span>ค่าจัดส่งชำระปลายทางกับพนักงานส่งอาหาร · <a href="#" id="trackOrderFootBtn" style="color:inherit;text-decoration:underline;">ติดตามออเดอร์</a> · <a href="#" id="adminOpenBtn" style="color:inherit;text-decoration:underline;">สำหรับร้านค้า</a></span>
   </div>
 </footer>
 
@@ -1617,6 +1637,8 @@
       <div class="field">
         <label for="custAddress">ที่อยู่จัดส่ง</label>
         <textarea id="custAddress" placeholder="บ้านเลขที่ ถนน ตำบล/แขวง อำเภอ/เขต จังหวัด รหัสไปรษณีย์"></textarea>
+        <button type="button" class="geo-pin-btn" id="geoPinBtn">📍 ปักหมุดตำแหน่งฉัน (GPS) — ไม่บังคับ</button>
+        <div class="geo-pin-result" id="geoPinResult"></div>
       </div>
       <div class="field">
         <label for="custNote">หมายเหตุถึงร้าน (ถ้ามี)</label>
@@ -1870,7 +1892,7 @@ renderGrid("mama","grid-mama");
 /* ---------- unified "all menu" grid with tab filter ---------- */
 function renderAllGrid(filter){
   const mount = document.getElementById("grid-all");
-  const items = filter === "all" ? MENU_ITEMS : MENU_ITEMS.filter(i=>i.cat===filter);
+  const items = filter === "all" ? MENU_ITEMS.filter(i=>i.cat!=="mama") : MENU_ITEMS.filter(i=>i.cat===filter);
   mount.innerHTML = items.map(dishCardHTML).join("");
   revealObserve(mount);
 }
@@ -2066,6 +2088,7 @@ document.getElementById("checkoutCloseBtn").addEventListener("click", closeCheck
 /* payment method toggle */
 /* submit order */
 let lastOrderText = "";
+let orderGeo = null; /* {lat,lng} จากปุ่มปักหมุด GPS ในฟอร์มที่อยู่ (ไม่บังคับ) */
 
 /* ---------------- attach payment slip ---------------- */
 let slipDataUrl = null;
@@ -2110,6 +2133,41 @@ document.getElementById("slipInput").addEventListener("change", async ()=>{
 });
 document.getElementById("slipRemoveBtn").addEventListener("click", resetSlipInput);
 
+/* ---------------- GPS pin ตำแหน่งจัดส่ง (ไม่บังคับ ช่วยให้ไรเดอร์หาบ้านเจอง่ายขึ้น) ---------------- */
+(function(){
+  const btn = document.getElementById("geoPinBtn");
+  const result = document.getElementById("geoPinResult");
+  if(!btn || !result) return;
+  btn.addEventListener("click", ()=>{
+    if(!("geolocation" in navigator)){
+      result.innerHTML = `<span style="color:var(--red-deep);">อุปกรณ์นี้ไม่รองรับการปักหมุด GPS กรอกที่อยู่แบบข้อความแทนได้เลย</span>`;
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = "📍 กำลังค้นหาตำแหน่ง...";
+    navigator.geolocation.getCurrentPosition(
+      (pos)=>{
+        orderGeo = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        btn.disabled = false;
+        btn.textContent = "📍 ปักหมุดใหม่อีกครั้ง";
+        const d = 0.003;
+        const bbox = [orderGeo.lng-d, orderGeo.lat-d, orderGeo.lng+d, orderGeo.lat+d].join("%2C");
+        result.innerHTML = `
+          <div class="geo-pin-ok">✓ ปักหมุดตำแหน่งแล้ว ทีมส่งจะเห็นตำแหน่งนี้แม่นยำขึ้น</div>
+          <iframe class="geo-pin-map" src="https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&marker=${orderGeo.lat}%2C${orderGeo.lng}" loading="lazy"></iframe>
+        `;
+      },
+      (err)=>{
+        btn.disabled = false;
+        btn.textContent = "📍 ปักหมุดตำแหน่งฉัน (GPS) — ไม่บังคับ";
+        const reason = err && err.code === 1 ? "ไม่ได้รับอนุญาตให้เข้าถึงตำแหน่ง" : "ลองใหม่อีกครั้ง";
+        result.innerHTML = `<span style="color:var(--red-deep);">ปักหมุดไม่สำเร็จ (${reason}) กรอกที่อยู่แบบข้อความแทนได้เลย</span>`;
+      },
+      { enableHighAccuracy:true, timeout:10000 }
+    );
+  });
+})();
+
 document.getElementById("submitOrderBtn").addEventListener("click", async ()=>{
   const name = document.getElementById("custName").value.trim();
   const phone = document.getElementById("custPhone").value.trim();
@@ -2152,7 +2210,7 @@ document.getElementById("submitOrderBtn").addEventListener("click", async ()=>{
     const unitPrice = lineUnitPrice(entry, item);
     return `• ${lineLabel(entry,item)} × ${entry.qty} = ${item.price>0?money(unitPrice*entry.qty):"แจ้งราคา"}`;
   }).join("\n");
-  lastOrderText = `🧾 ออเดอร์ครัวจานโปรด ${orderCode}\nวันที่: ${dateStr}\n\n${orderLines}\nรวม: ${money(subtotal)} (ไม่รวมค่าส่ง)\n\nผู้รับ: ${name}\nโทร: ${phone}\nที่อยู่: ${address}${note ? "\nหมายเหตุ: " + note : ""}\nชำระเงิน: ${payMethod}${slipDataUrl ? "\n📎 แนบสลิปโอนเงินแล้ว (ดูได้ในระบบหลังบ้าน)" : ""}`;
+  lastOrderText = `🧾 ออเดอร์ครัวจานโปรด ${orderCode}\nวันที่: ${dateStr}\n\n${orderLines}\nรวม: ${money(subtotal)} (ไม่รวมค่าส่ง)\n\nผู้รับ: ${name}\nโทร: ${phone}\nที่อยู่: ${address}${note ? "\nหมายเหตุ: " + note : ""}${orderGeo ? "\n📍 พิกัดตำแหน่ง: https://www.google.com/maps?q=" + orderGeo.lat + "," + orderGeo.lng : ""}\nชำระเงิน: ${payMethod}${slipDataUrl ? "\n📎 แนบสลิปโอนเงินแล้ว (ดูได้ในระบบหลังบ้าน)" : ""}`;
 
   /* บันทึกออเดอร์ไว้ให้ร้านดูในระบบหลังบ้าน (คงอยู่ต่อเนื่องเมื่อเปิดผ่าน Claude) */
   try{
@@ -2166,7 +2224,7 @@ document.getElementById("submitOrderBtn").addEventListener("click", async ()=>{
         return { name:lineLabel(entry,item), qty:entry.qty, price:lineUnitPrice(entry, item) };
       }),
       subtotal: subtotal,
-      customer: { name, phone, address, note },
+      customer: { name, phone, address, note, geo: orderGeo },
       payMethod: payMethod,
       source: "เว็บไซต์",
       status: "new",
@@ -2214,6 +2272,11 @@ document.getElementById("closeSuccessBtn").addEventListener("click", ()=>{
   document.getElementById("custPhone").value="";
   document.getElementById("custAddress").value="";
   document.getElementById("custNote").value="";
+  orderGeo = null;
+  const geoBtnReset = document.getElementById("geoPinBtn");
+  const geoResultReset = document.getElementById("geoPinResult");
+  if(geoBtnReset){ geoBtnReset.disabled = false; geoBtnReset.textContent = "📍 ปักหมุดตำแหน่งฉัน (GPS) — ไม่บังคับ"; }
+  if(geoResultReset){ geoResultReset.innerHTML = ""; }
 });
 
 /* ---------------- toast ---------------- */
@@ -2528,6 +2591,7 @@ toppingOverlay.addEventListener("click",(e)=>{
         </div>
         <div class="admin-order-items">${itemsText}</div>
         <div class="admin-order-cust">👤 ${o.customer?.name||"-"} · 📞 ${o.customer?.phone||"-"} · ${o.payMethod||""}</div>
+        ${o.customer?.geo ? `<a class="admin-order-geo" href="https://www.google.com/maps?q=${o.customer.geo.lat},${o.customer.geo.lng}" target="_blank" rel="noopener">📍 เปิดตำแหน่งลูกค้าใน Google Maps</a>` : ""}
         <div class="admin-order-source">📥 ช่องทาง: ${o.source||"เว็บไซต์"}</div>
         <div class="admin-order-rider">
           <input type="text" class="rider-link-input" data-code="${o.code}" placeholder="วางลิงก์ติดตามไรเดอร์ (Grab/LINE MAN/แผนที่)" value="${(o.riderLink||"").replace(/"/g,"&quot;")}">
