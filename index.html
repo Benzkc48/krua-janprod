@@ -902,6 +902,25 @@
   .status-new{background:var(--gold);color:var(--brown);}
   .status-preparing{background:var(--mint);color:#fff;}
   .status-done{background:var(--green-ok);color:#fff;}
+  .status-delivering{background:var(--mint);color:#fff;}
+
+  .admin-order-rider{
+    display:flex;gap:8px;align-items:center;margin-top:2px;
+  }
+  .admin-order-rider input{
+    flex:1;min-width:0;padding:8px 12px;border-radius:999px;border:none;
+    background:var(--cream-deep);font-family:inherit;font-size:0.8rem;color:var(--brown);
+  }
+  .admin-order-rider button{
+    flex-shrink:0;background:var(--red);color:#fff;border:none;
+    padding:8px 14px;border-radius:999px;font-weight:700;font-size:0.76rem;
+    box-shadow:var(--clay-out-sm);white-space:nowrap;
+  }
+  .admin-order-rider .rider-link-open{
+    flex-shrink:0;display:flex;align-items:center;justify-content:center;
+    width:32px;height:32px;border-radius:50%;background:var(--cream-deep);
+    color:var(--brown);text-decoration:none;font-weight:800;box-shadow:var(--clay-out-sm);
+  }
   .status-select{
     font-family:inherit;font-size:0.78rem;border:none;border-radius:999px;
     padding:5px 10px;background:var(--cream-deep);color:var(--brown);font-weight:700;
@@ -1978,11 +1997,12 @@ toppingOverlay.addEventListener("click",(e)=>{
   const errBox = document.getElementById("trackErr");
   const resultBox = document.getElementById("trackResult");
   const listMount = document.getElementById("trackOrdersList");
-  const STEP_ORDER = ["new", "preparing", "done"];
+  const STEP_ORDER = ["new", "preparing", "delivering", "done"];
   const STEP_META = [
     { step: "new", ic: "🧾", lbl: "รับออเดอร์" },
     { step: "preparing", ic: "🍳", lbl: "กำลังทำ" },
-    { step: "done", ic: "✅", lbl: "เสร็จ/จัดส่ง" },
+    { step: "delivering", ic: "🛵", lbl: "กำลังจัดส่ง" },
+    { step: "done", ic: "✅", lbl: "เสร็จสิ้น" },
   ];
   let pollTimer = null;
   let lastPhone = "";
@@ -2020,6 +2040,7 @@ toppingOverlay.addEventListener("click",(e)=>{
         ${order.dateStr ? `<div style="text-align:center;font-size:0.76rem;color:var(--brown-soft);margin-bottom:4px;">${order.dateStr}</div>` : ""}
         <div class="track-steps">${stepsHtml}</div>
         <div class="success-summary">${itemsHtml}</div>
+        ${order.riderLink ? `<a href="${order.riderLink}" target="_blank" rel="noopener" class="btn-primary" style="margin-top:14px;width:100%;justify-content:center;">🛵 ติดตามไรเดอร์</a>` : ""}
       </div>`;
   }
 
@@ -2171,6 +2192,7 @@ toppingOverlay.addEventListener("click",(e)=>{
 
   function statusLabel(s){
     if(s==="preparing") return "กำลังทำ";
+    if(s==="delivering") return "จัดส่งไรเดอร์แล้ว";
     if(s==="done") return "เสร็จแล้ว";
     return "ออเดอร์ใหม่";
   }
@@ -2192,12 +2214,18 @@ toppingOverlay.addEventListener("click",(e)=>{
         <div class="admin-order-items">${itemsText}</div>
         <div class="admin-order-cust">👤 ${o.customer?.name||"-"} · 📞 ${o.customer?.phone||"-"} · ${o.payMethod||""}</div>
         <div class="admin-order-source">📥 ช่องทาง: ${o.source||"เว็บไซต์"}</div>
+        <div class="admin-order-rider">
+          <input type="text" class="rider-link-input" data-code="${o.code}" placeholder="วางลิงก์ติดตามไรเดอร์ (Grab/LINE MAN/แผนที่)" value="${(o.riderLink||"").replace(/"/g,"&quot;")}">
+          <button type="button" class="rider-link-save" data-code="${o.code}">บันทึกลิงก์</button>
+          ${o.riderLink ? `<a class="rider-link-open" href="${o.riderLink}" target="_blank" rel="noopener" title="เปิดลิงก์">↗</a>` : ""}
+        </div>
         ${o.slip ? `<a class="admin-order-slip" href="${o.slip}" target="_blank" rel="noopener"><img src="${o.slip}" alt="สลิปโอนเงิน">ดูสลิปโอนเงิน</a>` : ""}
         <div class="admin-order-foot">
           <span class="admin-order-total">${(o.subtotal||0).toLocaleString("th-TH")} บาท</span>
           <select class="status-select" data-code="${o.code}">
             <option value="new" ${o.status==="new"?"selected":""}>🟡 ${statusLabel("new")}</option>
             <option value="preparing" ${o.status==="preparing"?"selected":""}>🩵 ${statusLabel("preparing")}</option>
+            <option value="delivering" ${o.status==="delivering"?"selected":""}>🛵 ${statusLabel("delivering")}</option>
             <option value="done" ${o.status==="done"?"selected":""}>✅ ${statusLabel("done")}</option>
           </select>
           <button type="button" class="admin-order-del" data-code="${o.code}">🗑 ลบ</button>
@@ -2223,6 +2251,39 @@ toppingOverlay.addEventListener("click",(e)=>{
           showToast("✓ อัปเดตสถานะออเดอร์แล้ว");
           loadDashboard(true);
         }catch(err){ showToast("⚠ อัปเดตสถานะไม่สำเร็จ"); }
+      });
+    });
+
+    ordersList.querySelectorAll(".rider-link-save").forEach(btn=>{
+      btn.addEventListener("click", async (e)=>{
+        const code = e.currentTarget.dataset.code;
+        const input = ordersList.querySelector(`.rider-link-input[data-code="${code}"]`);
+        const riderLink = input ? input.value.trim() : "";
+        try{
+          const res = await fetch(LINE_WORKER_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "update_status", code, riderLink, pin: ADMIN_PIN })
+          });
+          const data = await res.json().catch(()=>({}));
+          if(!res.ok || data.ok === false){
+            showToast("⚠ บันทึกลิงก์ไม่สำเร็จ");
+            return;
+          }
+          showToast("✓ บันทึกลิงก์ติดตามไรเดอร์แล้ว");
+          loadDashboard(true);
+        }catch(err){ showToast("⚠ บันทึกลิงก์ไม่สำเร็จ"); }
+      });
+    });
+
+    ordersList.querySelectorAll(".rider-link-input").forEach(inp=>{
+      inp.addEventListener("keydown",(e)=>{
+        if(e.key==="Enter"){
+          e.preventDefault();
+          const code = e.target.dataset.code;
+          const saveBtn = ordersList.querySelector(`.rider-link-save[data-code="${code}"]`);
+          if(saveBtn) saveBtn.click();
+        }
       });
     });
 
@@ -2333,6 +2394,12 @@ toppingOverlay.addEventListener("click",(e)=>{
   document.getElementById("adminDashCloseBtn").addEventListener("click", closeDash);
   document.getElementById("adminLogoutBtn").addEventListener("click", closeDash);
   document.getElementById("adminRefreshBtn").addEventListener("click", ()=> loadDashboard(false));
+  ordersList.addEventListener("focusin", (e)=>{
+    if(e.target.classList && e.target.classList.contains("rider-link-input")) stopPolling();
+  });
+  ordersList.addEventListener("focusout", (e)=>{
+    if(e.target.classList && e.target.classList.contains("rider-link-input")) startPolling();
+  });
   document.getElementById("adminNotifBtn").addEventListener("click", async ()=>{
     if("Notification" in window){
       const perm = await Notification.requestPermission();
