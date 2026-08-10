@@ -904,6 +904,29 @@
   .status-done{background:var(--green-ok);color:#fff;}
   .status-delivering{background:var(--mint);color:#fff;}
 
+  /* ---------- LINE OA "add friend" block (footer + checkout success) ---------- */
+  .line-add{
+    display:flex;align-items:center;justify-content:center;gap:14px;
+    flex-wrap:wrap;margin-top:22px;padding-top:22px;
+    border-top:1px dashed rgba(150,120,95,0.35);
+    text-align:center;
+  }
+  .line-add-btn{
+    display:inline-flex;align-items:center;gap:8px;
+    background:#06C755;color:#fff;font-weight:800;
+    padding:12px 22px;border-radius:999px;text-decoration:none;font-size:0.92rem;
+    box-shadow:0 8px 20px rgba(6,199,85,0.35);
+    white-space:nowrap;
+  }
+  .line-add-qr{
+    width:76px;height:76px;border-radius:14px;background:#fff;padding:5px;
+    box-shadow:var(--clay-out-sm);flex-shrink:0;
+  }
+  .line-add-hint{
+    width:100%;font-size:0.78rem;color:inherit;opacity:0.8;
+  }
+  .checkout-modal .line-add-hint, .success-view .line-add-hint{color:var(--brown-soft);opacity:1;}
+
   .admin-order-rider{
     display:flex;gap:8px;align-items:center;margin-top:2px;
   }
@@ -1348,11 +1371,16 @@
       <h5>ติดต่อร้าน</h5>
       <ul>
         <li>📞 โทร: 099-042-8788</li>
-        <li>💬 LINE: @krua-janprod</li>
+        <li>💬 LINE: <a href="https://line.me/R/ti/p/@krua-janprod" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">@krua-janprod</a></li>
         <li>📍 พื้นที่จัดส่ง: แจ้งเมื่อสั่งซื้อ</li>
         <li>⏰ เปิดทุกวัน 10:00–22:00 น.</li>
       </ul>
     </div>
+  </div>
+  <div class="line-add">
+    <a href="https://line.me/R/ti/p/@krua-janprod" target="_blank" rel="noopener" class="line-add-btn">💬 เพิ่มเพื่อน LINE ร้าน</a>
+    <img src="data:image/png;base64,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" alt="สแกนเพิ่มเพื่อน LINE ครัวจานโปรด" class="line-add-qr">
+    <span class="line-add-hint">สแกนหรือกดปุ่ม เพื่อรับโปรโมชั่นและข่าวสารร้านผ่าน LINE</span>
   </div>
   <div class="footer-bottom">
     <span>© 2026 ครัวจานโปรด. สงวนลิขสิทธิ์.</span>
@@ -1448,6 +1476,11 @@
         <div class="delivery-note" style="text-align:left;">
           <span class="ic">✅</span>
           <div><b>ส่งเข้า LINE ร้านให้อัตโนมัติแล้ว</b> ทีมงานได้รับข้อความออเดอร์นี้ทันที จะโทรยืนยันออเดอร์และแจ้งเวลาจัดส่งอีกครั้ง</div>
+        </div>
+        <div class="line-add">
+          <a href="https://line.me/R/ti/p/@krua-janprod" target="_blank" rel="noopener" class="line-add-btn">💬 เพิ่มเพื่อน LINE ร้าน</a>
+          <img src="data:image/png;base64,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" alt="สแกนเพิ่มเพื่อน LINE ครัวจานโปรด" class="line-add-qr">
+          <span class="line-add-hint">เพิ่มเพื่อนไว้ ติดตามออเดอร์และรับโปรโมชั่นได้ง่ายขึ้น</span>
         </div>
         <div style="display:flex;gap:10px;margin-top:14px;">
           <button type="button" class="btn-ghost" id="copyOrderBtn" style="flex:1;justify-content:center;">📋 คัดลอกออเดอร์ (สำรองไว้)</button>
