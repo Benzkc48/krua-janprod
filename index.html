@@ -355,7 +355,7 @@
   /* ---------- floating action (mobile) ---------- */
   .fab-cart{
     position:fixed; bottom:18px; right:18px; z-index:70;
-    display:none;
+    display:none; touch-action:none;
   }
   @media (max-width:720px){ .fab-cart{display:block;} }
   .fab-cart button{
@@ -366,6 +366,7 @@
     transition:transform .15s ease;
   }
   .fab-cart button:active{transform:scale(0.93);box-shadow:inset 3px 3px 8px rgba(120,10,35,0.5);}
+  .fab-cart.dragging button{transform:scale(1.1);box-shadow:0 14px 30px rgba(226,42,80,0.45);transition:none;}
   .fab-cart svg{width:24px;height:24px;}
   .fab-cart .cart-badge{top:-2px;right:-2px;}
 
@@ -1590,8 +1591,8 @@
 </footer>
 
 <!-- ================= FLOATING CART (mobile) ================= -->
-<div class="fab-cart">
-  <button id="cartOpenBtnMobile" aria-haspopup="dialog">
+<div class="fab-cart" id="fabCart">
+  <button id="cartOpenBtnMobile" aria-haspopup="dialog" aria-label="ตะกร้าสั่งอาหาร (กดเพื่อเปิด ลากเพื่อย้ายตำแหน่ง)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
     <span class="cart-badge" id="cartBadgeMobile">0</span>
   </button>
@@ -2071,6 +2072,95 @@ function openDrawer(){ drawer.classList.add("open"); overlay.classList.add("open
 function closeDrawer(){ drawer.classList.remove("open"); overlay.classList.remove("open"); }
 document.getElementById("cartOpenBtn").addEventListener("click", openDrawer);
 document.getElementById("cartOpenBtnMobile").addEventListener("click", openDrawer);
+
+/* ---------------- ลากปุ่มตะกร้าลอย (มือถือ) เผื่อไปบังเมนู ---------------- */
+(function(){
+  const fab = document.getElementById("fabCart");
+  const btn = document.getElementById("cartOpenBtnMobile");
+  if(!fab || !btn) return;
+  const STORAGE_KEY = "kjp_fab_cart_pos";
+  let dragging = false;
+  let moved = false;
+  let startX = 0, startY = 0, startRight = 18, startBottom = 18;
+
+  function clamp(v, min, max){ return Math.min(max, Math.max(min, v)); }
+
+  function applyPos(right, bottom){
+    const w = fab.offsetWidth || 58;
+    const h = fab.offsetHeight || 58;
+    const maxRight = Math.max(6, window.innerWidth - w - 6);
+    const maxBottom = Math.max(6, window.innerHeight - h - 6);
+    right = clamp(right, 6, maxRight);
+    bottom = clamp(bottom, 6, maxBottom);
+    fab.style.right = right + "px";
+    fab.style.bottom = bottom + "px";
+    fab.style.left = "auto";
+    fab.style.top = "auto";
+    return { right, bottom };
+  }
+
+  function getRightBottom(){
+    const rect = fab.getBoundingClientRect();
+    return {
+      right: window.innerWidth - rect.right,
+      bottom: window.innerHeight - rect.bottom
+    };
+  }
+
+  try{
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+    if(saved && typeof saved.right === "number" && typeof saved.bottom === "number"){
+      applyPos(saved.right, saved.bottom);
+    }
+  }catch(e){}
+
+  function onStart(clientX, clientY){
+    dragging = true;
+    moved = false;
+    startX = clientX; startY = clientY;
+    const rb = getRightBottom();
+    startRight = rb.right; startBottom = rb.bottom;
+    fab.classList.add("dragging");
+  }
+  function onMove(clientX, clientY){
+    if(!dragging) return;
+    const dx = clientX - startX;
+    const dy = clientY - startY;
+    if(Math.abs(dx) > 6 || Math.abs(dy) > 6) moved = true;
+    if(moved) applyPos(startRight - dx, startBottom - dy);
+  }
+  function onEnd(){
+    if(!dragging) return;
+    dragging = false;
+    fab.classList.remove("dragging");
+    if(moved){
+      const rb = getRightBottom();
+      try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(rb)); }catch(e){}
+    }
+  }
+
+  fab.addEventListener("touchstart", (e)=>{
+    const t = e.touches[0];
+    onStart(t.clientX, t.clientY);
+  }, {passive:true});
+  fab.addEventListener("touchmove", (e)=>{
+    const t = e.touches[0];
+    onMove(t.clientX, t.clientY);
+    if(moved) e.preventDefault();
+  }, {passive:false});
+  fab.addEventListener("touchend", onEnd);
+  fab.addEventListener("touchcancel", onEnd);
+
+  /* กันไม่ให้การ "ลาก" ไปเปิดตะกร้าโดยไม่ตั้งใจ (ต้องเป็นการแตะเฉยๆ ถึงจะเปิด) */
+  btn.addEventListener("click", (e)=>{
+    if(moved){ e.stopPropagation(); e.preventDefault(); }
+  }, true);
+
+  window.addEventListener("resize", ()=>{
+    const rb = getRightBottom();
+    applyPos(rb.right, rb.bottom);
+  });
+})();
 document.getElementById("cartCloseBtn").addEventListener("click", closeDrawer);
 overlay.addEventListener("click", ()=>{ closeDrawer(); closeCheckout(); });
 
