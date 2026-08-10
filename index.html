@@ -109,6 +109,27 @@
   nav.mainnav a:hover{color:var(--red);}
   @media (max-width:720px){ nav.mainnav{display:none;} }
 
+  /* ---------- header quick actions: big track-order / points buttons on mobile ---------- */
+  .header-quick-actions{display:none;}
+  @media (max-width:720px){
+    .header-quick-actions{
+      display:grid;grid-template-columns:1fr 1fr;gap:8px;
+      padding:0 14px 12px;
+    }
+    .hqa-btn{
+      display:flex;align-items:center;justify-content:center;gap:7px;
+      padding:13px 8px;border-radius:14px;
+      font-weight:800;font-size:0.92rem;text-decoration:none;line-height:1.15;
+      box-shadow:var(--clay-out-sm);
+    }
+    .hqa-btn .ic{font-size:1.2rem;}
+    .hqa-track{background:var(--red);color:#fff;}
+    .hqa-points{background:var(--gold);color:var(--brown);}
+  }
+  @media (max-width:360px){
+    .hqa-btn{font-size:0.82rem;padding:12px 6px;}
+  }
+
   .cart-btn{
     position:relative;
     display:flex;align-items:center;gap:8px;
@@ -1263,6 +1284,10 @@
       <span class="cart-badge" id="cartBadge">0</span>
     </button>
   </div>
+  <div class="header-quick-actions" id="headerQuickActions">
+    <a href="#" id="quickTrackBtn" class="hqa-btn hqa-track"><span class="ic">📦</span><span>ติดตามออเดอร์</span></a>
+    <a href="#" id="quickPointsBtn" class="hqa-btn hqa-points"><span class="ic">🎁</span><span>เช็คแต้มสะสม</span></a>
+  </div>
 </header>
 
 <!-- ================= TRUST BAR ================= -->
@@ -2313,6 +2338,8 @@ toppingOverlay.addEventListener("click",(e)=>{
   if(navBtn) navBtn.addEventListener("click",(e)=>{ e.preventDefault(); openTrack(); });
   const footBtn = document.getElementById("trackOrderFootBtn");
   if(footBtn) footBtn.addEventListener("click",(e)=>{ e.preventDefault(); openTrack(); });
+  const quickBtn = document.getElementById("quickTrackBtn");
+  if(quickBtn) quickBtn.addEventListener("click",(e)=>{ e.preventDefault(); openTrack(); });
 
   document.addEventListener("keydown",(e)=>{
     if(e.key==="Escape") closeTrack();
@@ -2379,6 +2406,8 @@ toppingOverlay.addEventListener("click",(e)=>{
   if(navBtn) navBtn.addEventListener("click",(e)=>{ e.preventDefault(); openPoints(); });
   const footBtn = document.getElementById("pointsFootBtn");
   if(footBtn) footBtn.addEventListener("click",(e)=>{ e.preventDefault(); openPoints(); });
+  const quickBtn = document.getElementById("quickPointsBtn");
+  if(quickBtn) quickBtn.addEventListener("click",(e)=>{ e.preventDefault(); openPoints(); });
 
   document.addEventListener("keydown",(e)=>{
     if(e.key==="Escape") closePoints();
