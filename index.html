@@ -1823,7 +1823,7 @@
     <div class="admin-orders" id="adminOrdersList">
       <div class="admin-empty">กำลังโหลดออเดอร์...</div>
     </div>
-    <div class="admin-note">ข้อมูลออเดอร์ถูกเก็บไว้ในระบบหน่วยความจำของ Claude Artifact (ใช้ได้ต่อเนื่องทุกครั้งที่เปิดหน้านี้ผ่าน Claude) ระบบจะเช็คออเดอร์ใหม่ให้อัตโนมัติทุก 20 วินาทีขณะเปิดหน้าต่างนี้ค้างไว้ และแจ้งเตือนด้วยเสียง/ป๊อปอัปถ้าเปิดการแจ้งเตือนของเบราว์เซอร์</div>
+    <div class="admin-note">กด "🔔 เปิดแจ้งเตือน" เพื่อรับแจ้งเตือนออเดอร์ใหม่แบบ Push จริง (มีเสียง มีป๊อปอัประบบ) เด้งได้แม้ปิดเบราว์เซอร์หรือล็อกหน้าจอ — บน iPhone ต้องกด แชร์ ▸ เพิ่มไปยังหน้าจอโฮม แล้วเปิดเว็บจากไอคอนนั้นก่อน 1 ครั้ง ถึงจะกดรับแจ้งเตือนได้ (ข้อจำกัดของ Safari) ถ้าไม่สะดวก ระบบจะยังแจ้งเตือนด้วยเสียง/ป๊อปอัปตามปกติทุกครั้งที่เปิดหน้าต่างนี้ค้างไว้เหมือนเดิม</div>
   </div>
 </div>
 
@@ -1841,6 +1841,9 @@
    ถ้ายังไม่ตั้งค่า (เว้นว่างไว้) ระบบจะข้ามการแจ้งเตือนไปเงียบๆ
    ========================================================= */
 const LINE_WORKER_URL = "https://krua-janprod-line.nantawat250142.workers.dev"; // Cloudflare Worker แจ้งเตือนออเดอร์เข้า LINE ร้าน
+// public key สำหรับ Push Notification จริง (ใช้คู่กับ VAPID_PRIVATE_KEY ที่ตั้งไว้ฝั่ง Worker)
+// เปลี่ยนได้ถ้าสร้างกุญแจชุดใหม่ — ต้องอัปเดตให้ตรงกับฝั่ง Worker เสมอ (ตัวนี้เป็น "public" ใส่ในโค้ดหน้าเว็บได้เลย ไม่ใช่ความลับ)
+const VAPID_PUBLIC_KEY = "BMoWG_jSqzWZG8Z9K6PjNh-nvqzLircIb4MAbTHywQLymwWbfP3eThCx6L9CU6Tsr2TGVBr61s5RZwY_Ru6TtC0";
 
 /* =========================================================
    แก้ไขเมนู/ราคาได้ที่นี่ — เปลี่ยนตัวเลข price ตามใจได้เลย
@@ -2920,6 +2923,44 @@ toppingOverlay.addEventListener("click",(e)=>{
   ordersList.addEventListener("focusout", (e)=>{
     if(e.target.classList && e.target.classList.contains("rider-link-input")) startPolling();
   });
+  /* แปลง VAPID public key (base64url) เป็น Uint8Array ตามฟอร์แมตที่ PushManager.subscribe ต้องการ */
+  function urlBase64ToUint8Array(base64String){
+    const padding = "=".repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const rawData = atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for(let i = 0; i < rawData.length; i++) outputArray[i] = rawData.charCodeAt(i);
+    return outputArray;
+  }
+
+  /* สมัครรับ Push Notification จริง (เด้งได้แม้ปิดเบราว์เซอร์/ล็อกจอ) — คืนค่า true ถ้าสำเร็จ
+     ล้มเหลวแบบเงียบๆ ได้ถ้าเบราว์เซอร์ไม่รองรับ หรือยังไม่ได้ตั้งค่า VAPID_PUBLIC_KEY */
+  async function setupPushSubscription(){
+    if(!("serviceWorker" in navigator) || !("PushManager" in window)) return false;
+    if(!VAPID_PUBLIC_KEY || !STORAGE_OK) return false;
+    try{
+      const reg = await navigator.serviceWorker.register("sw.js");
+      await navigator.serviceWorker.ready;
+      let sub = await reg.pushManager.getSubscription();
+      if(!sub){
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        });
+      }
+      const res = await fetch(LINE_WORKER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "save_push_subscription", subscription: sub.toJSON(), pin: ADMIN_PIN }),
+      });
+      const data = await res.json().catch(()=>({}));
+      return !!(res.ok && data.ok);
+    }catch(e){
+      console.error("ตั้งค่า Push แจ้งเตือนไม่สำเร็จ", e);
+      return false;
+    }
+  }
+
   document.getElementById("adminNotifBtn").addEventListener("click", async ()=>{
     if("Notification" in window){
       const perm = await Notification.requestPermission();
@@ -2927,8 +2968,16 @@ toppingOverlay.addEventListener("click",(e)=>{
     }else{
       notifEnabled = true; // อย่างน้อยเปิดเสียง+ป๊อปอัปในหน้าไว้ได้
     }
-    document.getElementById("adminNotifBtn").textContent = notifEnabled ? "🔔 แจ้งเตือนเปิดอยู่" : "🔕 ไม่ได้รับอนุญาต";
-    if(notifEnabled) showToast("✓ เปิดการแจ้งเตือนออเดอร์ใหม่แล้ว");
+    let pushOk = false;
+    if(notifEnabled){
+      pushOk = await setupPushSubscription();
+    }
+    document.getElementById("adminNotifBtn").textContent = notifEnabled
+      ? (pushOk ? "🔔 แจ้งเตือนเปิดอยู่ (Push)" : "🔔 แจ้งเตือนเปิดอยู่")
+      : "🔕 ไม่ได้รับอนุญาต";
+    if(notifEnabled){
+      showToast(pushOk ? "✓ เปิดแจ้งเตือนแบบ Push แล้ว เด้งได้แม้ปิดเว็บ" : "✓ เปิดการแจ้งเตือนออเดอร์ใหม่แล้ว");
+    }
   });
 
   /* ---------- แต้มสะสมลูกค้า: เช็ค + แลกแต้ม (ฝั่งแอดมิน) ---------- */
