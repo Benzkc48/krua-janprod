@@ -1108,10 +1108,30 @@
   .admin-order-slip{
     display:inline-flex;align-items:center;gap:8px;margin-top:8px;
     font-size:0.78rem;color:var(--brown-soft);text-decoration:none;font-weight:600;
+    background:none;border:none;font-family:inherit;padding:0;cursor:pointer;
   }
   .admin-order-slip img{
     width:38px;height:38px;object-fit:cover;border-radius:8px;
     box-shadow:var(--clay-out-sm);
+  }
+
+  /* ---------- slip image lightbox (tap to zoom, admin) ---------- */
+  .lightbox-overlay{
+    display:none;position:fixed;inset:0;z-index:200;
+    background:rgba(20,14,10,0.92);
+    align-items:center;justify-content:center;padding:26px;
+  }
+  .lightbox-overlay.open{display:flex;}
+  .lightbox-overlay img{
+    max-width:100%;max-height:100%;border-radius:12px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.5);
+    touch-action:pinch-zoom;
+  }
+  .lightbox-close{
+    position:absolute;top:18px;right:18px;
+    background:rgba(255,255,255,0.16);border:none;color:#fff;
+    width:44px;height:44px;border-radius:50%;font-size:1.2rem;
+    display:flex;align-items:center;justify-content:center;
   }
 
   /* ---------- LINE announcement bar: very top of page ---------- */
@@ -1651,7 +1671,7 @@
       </div>
       <div class="field">
         <label for="slipInput">แนบสลิปโอนเงิน (แนบตรงนี้ได้เลย หรือส่งทาง LINE ภายหลังก็ได้)</label>
-        <input type="file" id="slipInput" accept="image/*" capture="environment">
+        <input type="file" id="slipInput" accept="image/*">
         <div id="slipPreviewWrap" style="display:none;margin-top:10px;text-align:center;">
           <img id="slipPreviewImg" alt="ตัวอย่างสลิป" style="max-width:150px;border-radius:14px;box-shadow:var(--clay-out-sm);display:inline-block;">
           <button type="button" id="slipRemoveBtn" class="btn-ghost" style="display:block;margin:8px auto 0;">✕ เอารูปออก</button>
@@ -1805,6 +1825,12 @@
     </div>
     <div class="admin-note">ข้อมูลออเดอร์ถูกเก็บไว้ในระบบหน่วยความจำของ Claude Artifact (ใช้ได้ต่อเนื่องทุกครั้งที่เปิดหน้านี้ผ่าน Claude) ระบบจะเช็คออเดอร์ใหม่ให้อัตโนมัติทุก 20 วินาทีขณะเปิดหน้าต่างนี้ค้างไว้ และแจ้งเตือนด้วยเสียง/ป๊อปอัปถ้าเปิดการแจ้งเตือนของเบราว์เซอร์</div>
   </div>
+</div>
+
+<!-- ================= SLIP IMAGE LIGHTBOX (admin, tap to zoom) ================= -->
+<div class="lightbox-overlay" id="slipLightboxOverlay">
+  <button type="button" class="lightbox-close" id="slipLightboxClose" aria-label="ปิด">✕</button>
+  <img id="slipLightboxImg" alt="สลิปโอนเงิน (ขยาย)">
 </div>
 
 <script>
@@ -2194,7 +2220,7 @@ function resizeImageToDataUrl(file, maxW){
         const canvas = document.createElement("canvas");
         canvas.width = w; canvas.height = h;
         canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL("image/jpeg", 0.72));
+        resolve(canvas.toDataURL("image/jpeg", 0.88));
       };
       img.onerror = reject;
       img.src = e.target.result;
@@ -2214,7 +2240,7 @@ document.getElementById("slipInput").addEventListener("change", async ()=>{
   const file = document.getElementById("slipInput").files[0];
   if(!file) return;
   try{
-    slipDataUrl = await resizeImageToDataUrl(file, 900);
+    slipDataUrl = await resizeImageToDataUrl(file, 1600);
     document.getElementById("slipPreviewImg").src = slipDataUrl;
     document.getElementById("slipPreviewWrap").style.display = "block";
   }catch(e){
@@ -2575,7 +2601,7 @@ toppingOverlay.addEventListener("click",(e)=>{
      ตัวแปร ADMIN_PIN บน Cloudflare Worker ด้วย (ดูวิธีใน line-order-worker.js)
    ========================================================= */
 (function(){
-  const ADMIN_PIN = "0428"; // แก้รหัสผ่านร้านได้ที่นี่ (ต้องตรงกับฝั่ง Worker ด้วย)
+  const ADMIN_PIN = "2301"; // แก้รหัสผ่านร้านได้ที่นี่ (ต้องตรงกับฝั่ง Worker ด้วย)
   const STORAGE_OK = !!LINE_WORKER_URL;
 
   const loginOverlay = document.getElementById("adminLoginOverlay");
@@ -2688,7 +2714,7 @@ toppingOverlay.addEventListener("click",(e)=>{
           <button type="button" class="rider-link-save" data-code="${o.code}">บันทึกลิงก์</button>
           ${o.riderLink ? `<a class="rider-link-open" href="${o.riderLink}" target="_blank" rel="noopener" title="เปิดลิงก์">↗</a>` : ""}
         </div>
-        ${o.slip ? `<a class="admin-order-slip" href="${o.slip}" target="_blank" rel="noopener"><img src="${o.slip}" alt="สลิปโอนเงิน">ดูสลิปโอนเงิน</a>` : ""}
+        ${o.slip ? `<button type="button" class="admin-order-slip" data-slip="${o.slip}"><img src="${o.slip}" alt="สลิปโอนเงิน">ดูสลิปโอนเงิน (แตะเพื่อขยาย)</button>` : ""}
         <div class="admin-order-foot">
           <span class="admin-order-total">${(o.subtotal||0).toLocaleString("th-TH")} บาท</span>
           <select class="status-select" data-code="${o.code}">
@@ -2776,6 +2802,13 @@ toppingOverlay.addEventListener("click",(e)=>{
         }catch(err){ showToast("⚠ ลบออเดอร์ไม่สำเร็จ"); }
       });
     });
+
+    ordersList.querySelectorAll(".admin-order-slip").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const src = btn.dataset.slip;
+        if(src) openSlipLightbox(src);
+      });
+    });
   }
 
   async function loadDashboard(silent){
@@ -2843,6 +2876,24 @@ toppingOverlay.addEventListener("click",(e)=>{
     dashOverlay.classList.remove("open");
     stopPolling();
   }
+
+  const slipLightboxOverlay = document.getElementById("slipLightboxOverlay");
+  const slipLightboxImg = document.getElementById("slipLightboxImg");
+  function openSlipLightbox(src){
+    slipLightboxImg.src = src;
+    slipLightboxOverlay.classList.add("open");
+  }
+  function closeSlipLightbox(){
+    slipLightboxOverlay.classList.remove("open");
+    slipLightboxImg.src = "";
+  }
+  document.getElementById("slipLightboxClose").addEventListener("click", closeSlipLightbox);
+  slipLightboxOverlay.addEventListener("click", (e)=>{
+    if(e.target === slipLightboxOverlay) closeSlipLightbox();
+  });
+  document.addEventListener("keydown",(e)=>{
+    if(e.key==="Escape") closeSlipLightbox();
+  });
 
   document.getElementById("adminOpenBtn").addEventListener("click",(e)=>{
     e.preventDefault();
