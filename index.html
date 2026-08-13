@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>ครัวจานโปรด | สั่งอาหารออนไลน์</title>
 <!-- พรีวิวลิงก์ตอนแชร์ผ่าน LINE / Facebook / อื่นๆ -->
 <meta property="og:type" content="website">
@@ -34,7 +34,7 @@
     --cream-deep:#FFEBD6;
     --paper:#FFFFFF;
     --brown:#4A3728;
-    --brown-soft:#8A7160;
+    --brown-soft:#836B5B;
     --red:#FF4569;
     --red-deep:#E22A50;
     --gold:#FFC93C;
@@ -372,6 +372,7 @@
   /* ---------- floating action (mobile) ---------- */
   .fab-cart{
     position:fixed; bottom:18px; right:18px; z-index:70;
+    bottom:calc(18px + env(safe-area-inset-bottom));
     display:none; touch-action:none;
   }
   @media (max-width:720px){ .fab-cart{display:block;} }
@@ -390,11 +391,12 @@
   /* ---------- floating music toggle ---------- */
   .music-fab{
     position:fixed; bottom:18px; left:18px; z-index:70;
+    bottom:calc(18px + env(safe-area-inset-bottom));
   }
   .music-fab button{
     background:var(--gold);color:#3a2a12;border:none;
     width:52px;height:52px;border-radius:50%;
-    box-shadow:0 8px 18px rgba(120,80,10,0.35);
+    box-shadow:var(--clay-gold);
     font-size:1.35rem;
     display:flex;align-items:center;justify-content:center;
     transition:transform .15s ease;
@@ -403,8 +405,9 @@
   .music-player-panel{
     display:none;
     position:fixed; bottom:82px; left:18px; z-index:70;
-    background:var(--cream); border-radius:16px; overflow:hidden;
-    box-shadow:0 14px 30px rgba(74,55,40,0.28);
+    bottom:calc(82px + env(safe-area-inset-bottom));
+    background:var(--cream); border-radius:var(--radius-md); overflow:hidden;
+    box-shadow:var(--clay-out);
     width:280px; max-width:calc(100vw - 36px);
   }
   .music-player-head{
@@ -412,6 +415,7 @@
     padding:8px 6px 8px 12px; font-weight:800; font-size:0.85rem; color:var(--brown);
     background:var(--gold-soft);
   }
+  .music-player-head-btns{display:flex;align-items:center;gap:2px;}
   .music-player-head button{
     background:none;border:none;font-size:1rem;color:var(--brown);
     width:30px;height:30px;border-radius:50%;
@@ -983,9 +987,9 @@
     font-size:0.72rem;font-weight:700;padding:4px 12px;border-radius:999px;
   }
   .status-new{background:var(--gold);color:var(--brown);}
-  .status-preparing{background:var(--mint);color:#fff;}
-  .status-done{background:var(--green-ok);color:#fff;}
-  .status-delivering{background:var(--mint);color:#fff;}
+  .status-preparing{background:var(--mint);color:var(--brown);}
+  .status-done{background:#41BC81;color:var(--brown);}
+  .status-delivering{background:var(--mint);color:var(--brown);}
 
   /* ---------- LINE OA "add friend" block (footer + checkout success) ---------- */
   .line-add{
@@ -1106,7 +1110,7 @@
     font-size:0.95rem;color:var(--brown-soft);border:2px solid rgba(74,55,40,0.14);
   }
   .track-step.active .dot{background:var(--gold);color:var(--brown);border-color:var(--gold);}
-  .track-step.done .dot{background:var(--green-ok);color:#fff;border-color:var(--green-ok);}
+  .track-step.done .dot{background:#41BC81;color:var(--brown);border-color:#41BC81;}
   .track-step span.lbl{font-size:0.72rem;color:var(--brown-soft);}
   .track-step:not(:last-child)::after{
     content:'';position:absolute;top:16px;left:60%;width:80%;height:2px;
@@ -1299,7 +1303,7 @@
   }
   .geo-pin-btn:disabled{opacity:0.6;}
   .geo-pin-result{margin-top:10px;font-size:0.8rem;color:var(--brown-soft);}
-  .geo-pin-ok{color:var(--green-ok);font-weight:700;margin-bottom:8px;}
+  .geo-pin-ok{color:#266E4B;font-weight:700;margin-bottom:8px;}
   .geo-pin-map{
     width:100%;height:180px;border:none;border-radius:var(--radius-sm);
     box-shadow:var(--clay-out-sm);display:block;
@@ -1675,7 +1679,10 @@
 <div class="music-player-panel" id="musicPlayerPanel">
   <div class="music-player-head">
     <span>🎵 เพลงพื้นหลัง</span>
-    <button type="button" id="musicPlayerCloseBtn" aria-label="ปิดเพลง">✕</button>
+    <span class="music-player-head-btns">
+      <button type="button" id="musicPlayerFoldBtn" aria-label="พับหน้าเพลง (เพลงเล่นต่อ)">▾</button>
+      <button type="button" id="musicPlayerCloseBtn" aria-label="ปิดเพลง">✕</button>
+    </span>
   </div>
   <iframe id="musicFrame" width="280" height="158" src="" title="เพลงพื้นหลัง" frameborder="0"
     allow="autoplay; encrypted-media" allowfullscreen></iframe>
@@ -2946,39 +2953,69 @@ toppingOverlay.addEventListener("click",(e)=>{
   }
 
   /* ---------- ปุ่มเพลงพื้นหลัง (ฝัง YouTube embed) ----------
-     เปิดเป็นกรอบเล็กๆ ที่มองเห็น/แตะได้จริง (ไม่ซ่อนไว้นอกจอ) เพราะมือถือหลายรุ่น
-     (โดยเฉพาะ iPhone/Safari) บล็อคการเล่นอัตโนมัติแบบมีเสียง — ถ้าบล็อค ผู้ใช้ต้อง
-     แตะปุ่มเล่นของ YouTube เองในกรอบวิดีโอ ถ้าซ่อนกรอบไว้นอกจอจะไม่มีทางแตะได้เลย */
+     3 สถานะ: ปิดอยู่ / เปิดอยู่ (เห็นกรอบวิดีโอ) / พับอยู่ (เพลงเล่นต่อ แค่ซ่อนกรอบ)
+     ตอนเริ่มเล่นต้องโชว์กรอบวิดีโอไว้ก่อน เพราะมือถือหลายรุ่น (โดยเฉพาะ iPhone/Safari)
+     บล็อคการเล่นอัตโนมัติแบบมีเสียง ต้องมีปุ่มเล่นของ YouTube ให้แตะเองได้ — แต่พอเล่นติด
+     แล้ว "พับ" กรอบเก็บได้เลย (ซ่อนด้วย display:none เฉยๆ ไม่แตะ src) เพลงเล่นต่อเหมือนเดิม
+     กด ✕ เท่านั้นถึงจะหยุดเพลงจริง ๆ (เอา src ออก) */
   (function(){
     const YT_VIDEO_ID = "2fhH1YtKoy8";
     const YT_LIST_ID = "PL_Z-vyXvZD7gac7I8eRuXn0CKceSpSVcN";
     const musicBtn = document.getElementById("musicToggleBtn");
     const musicFrame = document.getElementById("musicFrame");
     const musicPanel = document.getElementById("musicPlayerPanel");
+    const musicFoldBtn = document.getElementById("musicPlayerFoldBtn");
     const musicCloseBtn = document.getElementById("musicPlayerCloseBtn");
-    let musicPlaying = false;
+    let musicStarted = false; // src ถูกตั้งไว้ (กำลังเล่น/รอแตะเล่น) อยู่หรือไม่
+    let musicFolded = false;  // กรอบวิดีโอถูกพับซ่อนอยู่หรือไม่ (ระหว่างที่ยังเล่นอยู่)
 
-    function openMusic(){
-      musicPlaying = true;
+    function renderMusicBtn(){
+      if(!musicStarted){
+        musicBtn.textContent = "🎵";
+        musicBtn.setAttribute("aria-pressed", "false");
+        musicBtn.setAttribute("aria-label", "เปิดเพลง");
+      }else if(musicFolded){
+        musicBtn.textContent = "🎶";
+        musicBtn.setAttribute("aria-pressed", "true");
+        musicBtn.setAttribute("aria-label", "ดูหน้าเพลง (กำลังเล่นอยู่)");
+      }else{
+        musicBtn.textContent = "🔽";
+        musicBtn.setAttribute("aria-pressed", "true");
+        musicBtn.setAttribute("aria-label", "พับหน้าเพลง (เพลงเล่นต่อ)");
+      }
+    }
+    function startMusic(){
+      musicStarted = true;
+      musicFolded = false;
       musicFrame.src = "https://www.youtube.com/embed/" + YT_VIDEO_ID + "?list=" + YT_LIST_ID + "&autoplay=1&playsinline=1&rel=0&modestbranding=1";
       musicPanel.style.display = "block";
-      musicBtn.textContent = "🔇";
-      musicBtn.setAttribute("aria-pressed", "true");
-      musicBtn.setAttribute("aria-label", "ปิดเพลง");
+      renderMusicBtn();
     }
-    function closeMusic(){
-      musicPlaying = false;
+    function foldMusic(){
+      musicFolded = true;
+      musicPanel.style.display = "none"; // ซ่อนกรอบเฉยๆ ไม่แตะ src เพลงเลยเล่นต่อได้
+      renderMusicBtn();
+    }
+    function unfoldMusic(){
+      musicFolded = false;
+      musicPanel.style.display = "block";
+      renderMusicBtn();
+    }
+    function stopMusic(){
+      musicStarted = false;
+      musicFolded = false;
       musicFrame.src = ""; // เอา src ออกเพื่อหยุดเพลงจริง ๆ (ไม่ใช่แค่ซ่อน)
       musicPanel.style.display = "none";
-      musicBtn.textContent = "🎵";
-      musicBtn.setAttribute("aria-pressed", "false");
-      musicBtn.setAttribute("aria-label", "เปิดเพลง");
+      renderMusicBtn();
     }
     if(musicBtn && musicFrame && musicPanel){
       musicBtn.addEventListener("click", function(){
-        if(musicPlaying) closeMusic(); else openMusic();
+        if(!musicStarted) startMusic();
+        else if(musicFolded) unfoldMusic();
+        else foldMusic();
       });
-      if(musicCloseBtn) musicCloseBtn.addEventListener("click", closeMusic);
+      if(musicFoldBtn) musicFoldBtn.addEventListener("click", foldMusic);
+      if(musicCloseBtn) musicCloseBtn.addEventListener("click", stopMusic);
     }
   })();
 
