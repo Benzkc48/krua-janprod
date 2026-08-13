@@ -400,7 +400,24 @@
     transition:transform .15s ease;
   }
   .music-fab button:active{transform:scale(0.93);}
-  .music-player-wrap{position:fixed;left:-9999px;top:-9999px;width:2px;height:2px;overflow:hidden;}
+  .music-player-panel{
+    display:none;
+    position:fixed; bottom:82px; left:18px; z-index:70;
+    background:var(--cream); border-radius:16px; overflow:hidden;
+    box-shadow:0 14px 30px rgba(74,55,40,0.28);
+    width:280px; max-width:calc(100vw - 36px);
+  }
+  .music-player-head{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:8px 6px 8px 12px; font-weight:800; font-size:0.85rem; color:var(--brown);
+    background:var(--gold-soft);
+  }
+  .music-player-head button{
+    background:none;border:none;font-size:1rem;color:var(--brown);
+    width:30px;height:30px;border-radius:50%;
+  }
+  .music-player-panel iframe{display:block;width:100%;height:158px;border:none;}
+  .music-player-hint{margin:0;padding:8px 12px;font-size:0.72rem;color:var(--brown-soft);line-height:1.5;}
 
   /* ---------- cart drawer (order-ticket style) ---------- */
   .overlay{
@@ -1655,9 +1672,14 @@
 <div class="music-fab" id="musicFab">
   <button id="musicToggleBtn" aria-label="เปิดเพลง" aria-pressed="false">🎵</button>
 </div>
-<div class="music-player-wrap" id="musicPlayerWrap" aria-hidden="true">
-  <iframe id="musicFrame" width="2" height="2" src="" title="เพลงพื้นหลัง" frameborder="0"
+<div class="music-player-panel" id="musicPlayerPanel">
+  <div class="music-player-head">
+    <span>🎵 เพลงพื้นหลัง</span>
+    <button type="button" id="musicPlayerCloseBtn" aria-label="ปิดเพลง">✕</button>
+  </div>
+  <iframe id="musicFrame" width="280" height="158" src="" title="เพลงพื้นหลัง" frameborder="0"
     allow="autoplay; encrypted-media" allowfullscreen></iframe>
+  <p class="music-player-hint">ถ้าเพลงไม่เล่นเอง ลองแตะปุ่ม ▶️ ในกรอบวิดีโอด้านบนอีกครั้ง (มือถือบางรุ่นบล็อคการเล่นอัตโนมัติ)</p>
 </div>
 
 <!-- ================= CART DRAWER ================= -->
@@ -2923,28 +2945,40 @@ toppingOverlay.addEventListener("click",(e)=>{
     }catch(e){ /* เบราว์เซอร์บางตัวอาจไม่รองรับ */ }
   }
 
-  /* ---------- ปุ่มเพลงพื้นหลัง (ฝัง YouTube embed) ---------- */
+  /* ---------- ปุ่มเพลงพื้นหลัง (ฝัง YouTube embed) ----------
+     เปิดเป็นกรอบเล็กๆ ที่มองเห็น/แตะได้จริง (ไม่ซ่อนไว้นอกจอ) เพราะมือถือหลายรุ่น
+     (โดยเฉพาะ iPhone/Safari) บล็อคการเล่นอัตโนมัติแบบมีเสียง — ถ้าบล็อค ผู้ใช้ต้อง
+     แตะปุ่มเล่นของ YouTube เองในกรอบวิดีโอ ถ้าซ่อนกรอบไว้นอกจอจะไม่มีทางแตะได้เลย */
   (function(){
     const YT_VIDEO_ID = "2fhH1YtKoy8";
     const YT_LIST_ID = "PL_Z-vyXvZD7gac7I8eRuXn0CKceSpSVcN";
     const musicBtn = document.getElementById("musicToggleBtn");
     const musicFrame = document.getElementById("musicFrame");
+    const musicPanel = document.getElementById("musicPlayerPanel");
+    const musicCloseBtn = document.getElementById("musicPlayerCloseBtn");
     let musicPlaying = false;
-    if(musicBtn && musicFrame){
+
+    function openMusic(){
+      musicPlaying = true;
+      musicFrame.src = "https://www.youtube.com/embed/" + YT_VIDEO_ID + "?list=" + YT_LIST_ID + "&autoplay=1&playsinline=1&rel=0&modestbranding=1";
+      musicPanel.style.display = "block";
+      musicBtn.textContent = "🔇";
+      musicBtn.setAttribute("aria-pressed", "true");
+      musicBtn.setAttribute("aria-label", "ปิดเพลง");
+    }
+    function closeMusic(){
+      musicPlaying = false;
+      musicFrame.src = ""; // เอา src ออกเพื่อหยุดเพลงจริง ๆ (ไม่ใช่แค่ซ่อน)
+      musicPanel.style.display = "none";
+      musicBtn.textContent = "🎵";
+      musicBtn.setAttribute("aria-pressed", "false");
+      musicBtn.setAttribute("aria-label", "เปิดเพลง");
+    }
+    if(musicBtn && musicFrame && musicPanel){
       musicBtn.addEventListener("click", function(){
-        musicPlaying = !musicPlaying;
-        if(musicPlaying){
-          musicFrame.src = "https://www.youtube.com/embed/" + YT_VIDEO_ID + "?list=" + YT_LIST_ID + "&autoplay=1&playsinline=1";
-          musicBtn.textContent = "🔇";
-          musicBtn.setAttribute("aria-pressed", "true");
-          musicBtn.setAttribute("aria-label", "ปิดเพลง");
-        }else{
-          musicFrame.src = ""; // เอา src ออกเพื่อหยุดเพลงจริง ๆ (ไม่ใช่แค่ซ่อน)
-          musicBtn.textContent = "🎵";
-          musicBtn.setAttribute("aria-pressed", "false");
-          musicBtn.setAttribute("aria-label", "เปิดเพลง");
-        }
+        if(musicPlaying) closeMusic(); else openMusic();
       });
+      if(musicCloseBtn) musicCloseBtn.addEventListener("click", closeMusic);
     }
   })();
 
