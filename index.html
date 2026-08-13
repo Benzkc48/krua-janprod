@@ -970,11 +970,19 @@
   .admin-stat .lbl{font-size:0.75rem;color:var(--brown-soft);margin-top:2px;}
 
   .admin-orders{max-height:55vh;overflow-y:auto;border-top:2px dashed rgba(74,55,40,0.14);}
+  .admin-day-group + .admin-day-group{margin-top:18px;padding-top:16px;border-top:2px dashed rgba(74,55,40,0.14);}
+  .admin-day-heading{margin:10px 0 6px;font-size:0.86rem;font-weight:800;color:var(--brown-soft);}
+  .admin-day-group.is-today .admin-day-heading{color:var(--red-deep);}
   .admin-order{
     padding:14px 4px;border-bottom:1px dashed rgba(74,55,40,0.13);
     display:flex;flex-direction:column;gap:6px;
   }
   .admin-order.is-new{background:rgba(255,201,60,0.14);border-radius:12px;padding:14px 10px;}
+  .admin-order.is-cancelled{opacity:0.6;}
+  .admin-cancelled-label{
+    font-weight:700;font-size:0.85rem;color:var(--red-deep);
+    padding:8px 4px;
+  }
   .admin-order-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;}
   .admin-order-head .code{font-weight:800;color:var(--brown);}
   .admin-order-head .time{font-size:0.76rem;color:var(--brown-soft);}
@@ -1880,6 +1888,7 @@
         <button id="adminShopStatusBtn">🟢 ร้านเปิดอยู่ (แตะเพื่อปิด)</button>
         <button id="adminNotifBtn">🔔 เปิดแจ้งเตือน</button>
         <button id="adminExportBtn">📥 ส่งออก CSV</button>
+        <button id="adminSyncSheetsBtn">📊 ซิงก์ Sheets</button>
         <button id="adminRefreshBtn">🔄 รีเฟรช</button>
         <button id="adminLogoutBtn">ออกจากระบบ</button>
       </div>
@@ -2875,24 +2884,28 @@ toppingOverlay.addEventListener("click",(e)=>{
   function orderTotal(order){ return order.subtotal || 0; }
 
   function renderStats(orders){
+    // ออเดอร์ที่ลูกค้ายกเลิกเอง ไม่นับในยอดขาย/จำนวนออเดอร์ (เก็บไว้แค่ในรายการเพื่อดูประวัติ)
+    const activeOrders = orders.filter(o=>o.status !== "cancelled");
     const now = Date.now();
-    const todayOrders = orders.filter(o=>isSameDay(o.timestamp, now));
+    const todayOrders = activeOrders.filter(o=>isSameDay(o.timestamp, now));
     const todayRevenue = todayOrders.reduce((s,o)=>s+orderTotal(o),0);
-    const allRevenue = orders.reduce((s,o)=>s+orderTotal(o),0);
+    const allRevenue = activeOrders.reduce((s,o)=>s+orderTotal(o),0);
     document.getElementById("statTodayOrders").textContent = todayOrders.length;
     document.getElementById("statTodayRevenue").textContent = todayRevenue.toLocaleString("th-TH");
-    document.getElementById("statAllOrders").textContent = orders.length;
+    document.getElementById("statAllOrders").textContent = activeOrders.length;
     document.getElementById("statAllRevenue").textContent = allRevenue.toLocaleString("th-TH");
   }
 
   function renderDailySales(orders){
     const dailyList = document.getElementById("adminDailyList");
-    if(orders.length === 0){
+    // เหมือน renderStats — ออเดอร์ที่ยกเลิกแล้วไม่นับยอดขายรายวัน
+    const activeOrders = orders.filter(o=>o.status !== "cancelled");
+    if(activeOrders.length === 0){
       dailyList.innerHTML = `<div class="admin-empty">ยังไม่มียอดขาย</div>`;
       return;
     }
     const map = {};
-    orders.forEach(o=>{
+    activeOrders.forEach(o=>{
       const d = new Date(o.timestamp || 0);
       const key = d.toLocaleDateString("th-TH", {day:"2-digit", month:"short", year:"numeric"});
       if(!map[key]) map[key] = { count:0, revenue:0, ts:o.timestamp||0 };
@@ -2917,16 +2930,12 @@ toppingOverlay.addEventListener("click",(e)=>{
     return "ออเดอร์ใหม่";
   }
 
-  function renderOrders(orders){
-    if(orders.length===0){
-      ordersList.innerHTML = `<div class="admin-empty">ยังไม่มีออเดอร์เข้ามา</div>`;
-      return;
-    }
-    ordersList.innerHTML = orders.map(o=>{
-      const itemsText = (o.items||[]).map(it=>`${it.name} × ${it.qty}`).join("\n");
-      const isNewOrder = o.status === "new";
-      return `
-      <div class="admin-order ${isNewOrder?"is-new":""}" data-code="${o.code}">
+  function adminOrderCardHtml(o){
+    const itemsText = (o.items||[]).map(it=>`${it.name} × ${it.qty}`).join("\n");
+    const isNewOrder = o.status === "new";
+    const isCancelled = o.status === "cancelled";
+    return `
+      <div class="admin-order ${isNewOrder?"is-new":""} ${isCancelled?"is-cancelled":""}" data-code="${o.code}">
         <div class="admin-order-head">
           <span class="code">${o.code}</span>
           <span class="time">${o.dateStr||""}</span>
@@ -2943,14 +2952,53 @@ toppingOverlay.addEventListener("click",(e)=>{
         ${o.slip ? `<button type="button" class="admin-order-slip" data-slip="${o.slip}"><img src="${o.slip}" alt="สลิปโอนเงิน">ดูสลิปโอนเงิน (แตะเพื่อขยาย)</button>` : ""}
         <div class="admin-order-foot">
           <span class="admin-order-total">${(o.subtotal||0).toLocaleString("th-TH")} บาท</span>
-          <select class="status-select" data-code="${o.code}">
+          ${isCancelled
+            ? `<span class="admin-cancelled-label">❌ ลูกค้ายกเลิกเอง (ไม่นับยอดขาย)</span>`
+            : `<select class="status-select" data-code="${o.code}">
             <option value="new" ${o.status==="new"?"selected":""}>🟡 ${statusLabel("new")}</option>
             <option value="preparing" ${o.status==="preparing"?"selected":""}>🩵 ${statusLabel("preparing")}</option>
             <option value="delivering" ${o.status==="delivering"?"selected":""}>🛵 ${statusLabel("delivering")}</option>
             <option value="done" ${o.status==="done"?"selected":""}>✅ ${statusLabel("done")}</option>
-          </select>
+          </select>`}
           <button type="button" class="admin-order-del" data-code="${o.code}">🗑 ลบ</button>
         </div>
+      </div>`;
+  }
+
+  function renderOrders(orders){
+    if(orders.length===0){
+      ordersList.innerHTML = `<div class="admin-empty">ยังไม่มีออเดอร์เข้ามา</div>`;
+      return;
+    }
+    // จัดกลุ่มออเดอร์แยกเป็นรายวัน (ตามลำดับเดิมของ orders ซึ่งเรียงใหม่สุดก่อนอยู่แล้ว)
+    // พอขึ้นวันใหม่ ออเดอร์แรกของวันนั้นจะเปิดกลุ่มใหม่โดยอัตโนมัติ ไม่ปนกับวันก่อนหน้า
+    const now = Date.now();
+    const groups = [];
+    const groupByKey = {};
+    orders.forEach(o=>{
+      const ts = o.timestamp || 0;
+      const key = new Date(ts).toDateString();
+      if(!groupByKey[key]){
+        groupByKey[key] = {
+          label: new Date(ts).toLocaleDateString("th-TH", {day:"2-digit", month:"short", year:"numeric"}),
+          isToday: isSameDay(ts, now),
+          orders: [],
+        };
+        groups.push(groupByKey[key]);
+      }
+      groupByKey[key].orders.push(o);
+    });
+
+    ordersList.innerHTML = groups.map(g=>{
+      // ยอดรวม/จำนวนของแต่ละวันในหัวข้อกลุ่ม ไม่นับออเดอร์ที่ยกเลิก (เหมือน renderStats/renderDailySales)
+      // แต่การ์ดออเดอร์ที่ยกเลิกยังโชว์อยู่ในรายการของวันนั้นตามปกติ เพื่อดูประวัติ
+      const activeInGroup = g.orders.filter(o=>o.status !== "cancelled");
+      const groupRevenue = activeInGroup.reduce((s,o)=>s+(o.subtotal||0),0);
+      const dayLabel = g.isToday ? `🗓 วันนี้ · ${g.label}` : `📆 ${g.label}`;
+      return `
+      <div class="admin-day-group ${g.isToday?"is-today":""}">
+        <h4 class="admin-day-heading">${dayLabel} · ${activeInGroup.length} ออเดอร์ · ${groupRevenue.toLocaleString("th-TH")} บาท</h4>
+        ${g.orders.map(adminOrderCardHtml).join("")}
       </div>`;
     }).join("");
 
@@ -3248,6 +3296,34 @@ toppingOverlay.addEventListener("click",(e)=>{
   }
   const adminExportBtn = document.getElementById("adminExportBtn");
   if(adminExportBtn) adminExportBtn.addEventListener("click", exportOrdersCsv);
+
+  /* ---------- ซิงก์ออเดอร์ทั้งหมดเข้า Google Sheets เอง (ตั้งค่าครั้งแรก / ซิงก์ซ้ำ) ----------
+     ออเดอร์ใหม่/เปลี่ยนสถานะ/ยกเลิก จะซิงก์อัตโนมัติอยู่แล้วฝั่ง Worker ไม่ต้องกดปุ่มนี้ทุกครั้ง
+     ปุ่มนี้ไว้ใช้ตอนตั้งค่า Google Sheets ครั้งแรก (ดึงประวัติเก่าเข้าไปด้วย) หรือกดซิงก์ซ้ำ
+     เผื่อรอบอัตโนมัติก่อนหน้าพลาดไป (เช่น Google Apps Script ล่มชั่วคราว) */
+  async function syncAllToSheets(){
+    const syncBtn = document.getElementById("adminSyncSheetsBtn");
+    if(syncBtn) syncBtn.disabled = true;
+    try{
+      const res = await fetch(LINE_WORKER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "sync_all_to_sheets", pin: ADMIN_PIN }),
+      });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok || !data.ok){
+        showToast(data.error || "⚠ ซิงก์ Google Sheets ไม่สำเร็จ");
+        return;
+      }
+      showToast(`✓ ซิงก์ ${data.synced} ออเดอร์เข้า Google Sheets แล้ว`);
+    }catch(e){
+      showToast("⚠ เชื่อมต่อ Google Sheets ไม่ได้ กรุณาลองใหม่");
+    }finally{
+      if(syncBtn) syncBtn.disabled = false;
+    }
+  }
+  const adminSyncSheetsBtn = document.getElementById("adminSyncSheetsBtn");
+  if(adminSyncSheetsBtn) adminSyncSheetsBtn.addEventListener("click", syncAllToSheets);
 
   document.getElementById("adminRefreshBtn").addEventListener("click", ()=> loadDashboard(false));
   ordersList.addEventListener("focusin", (e)=>{
