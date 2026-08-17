@@ -334,6 +334,35 @@
     padding:26px 22px;text-align:center;
     box-shadow:var(--clay-out-sm);
   }
+
+  /* ---------- promotions / reviews empty states ---------- */
+  .promo-empty, .review-empty{
+    max-width:420px;margin:0 auto;text-align:center;background:var(--paper);
+    border-radius:var(--radius-md);padding:36px 26px;box-shadow:var(--clay-out-sm);
+  }
+  .promo-empty-ic, .review-empty-ic{font-size:2.6rem;margin-bottom:10px;}
+  .promo-empty p, .review-empty p{color:var(--brown-soft);margin:0 0 18px;}
+  .review-empty p{margin:0;}
+  .review-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;max-width:1000px;margin:0 auto;}
+  .review-card{background:var(--paper);border-radius:var(--radius-md);padding:22px;box-shadow:var(--clay-out-sm);}
+  .review-stars{color:var(--gold);font-size:1.1rem;margin-bottom:8px;}
+  .review-text{color:var(--brown);font-size:0.92rem;line-height:1.6;margin:0 0 10px;}
+  .review-name{color:var(--brown-soft);font-size:0.82rem;font-weight:700;}
+
+  /* ---------- FAQ ---------- */
+  .faq-list{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:12px;}
+  .faq-item{
+    background:var(--paper);border-radius:var(--radius-md);padding:18px 22px;
+    box-shadow:var(--clay-out-sm);
+  }
+  .faq-item summary{
+    font-weight:700;color:var(--brown);cursor:pointer;list-style:none;
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+  }
+  .faq-item summary::-webkit-details-marker{display:none;}
+  .faq-item summary::after{content:"+";font-size:1.3rem;color:var(--red);flex-shrink:0;}
+  .faq-item[open] summary::after{content:"\2212";}
+  .faq-item p{margin:12px 0 0;color:var(--brown-soft);font-size:0.92rem;line-height:1.7;}
   .step .num{
     width:44px;height:44px;border-radius:50%;
     background:var(--cream-deep);color:var(--red-deep);
@@ -351,7 +380,7 @@
   }
   .footer-inner{
     max-width:1180px;margin:0 auto;
-    display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:36px;
+    display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:36px;
   }
   @media (max-width:720px){ .footer-inner{grid-template-columns:1fr;} }
   .footer-inner .brand{margin-bottom:12px;}
@@ -961,6 +990,13 @@
     font-weight:700;font-size:0.82rem;box-shadow:var(--clay-out-sm);color:var(--brown);
   }
   .admin-actions button.primary{background:var(--red);color:#fff;box-shadow:var(--clay-red);}
+
+  .admin-tabs{display:flex;gap:6px;margin-bottom:18px;border-bottom:2px solid var(--cream-deep);flex-wrap:wrap;}
+  .admin-tab-btn{
+    background:none;border:none;padding:10px 16px;font-weight:700;font-size:0.88rem;
+    color:var(--brown-soft);border-bottom:3px solid transparent;margin-bottom:-2px;
+  }
+  .admin-tab-btn.active{color:var(--red-deep);border-bottom-color:var(--red-deep);}
 
   .admin-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:22px;}
   .admin-stat{
@@ -1638,6 +1674,78 @@
   </div>
 </section>
 
+<!-- ================= PROMOTIONS (โปรโมชั่น) ================= -->
+<section class="section" id="promotions">
+  <div class="section-head reveal-up">
+    <span class="kicker">อัพเดตเร็วๆ นี้</span>
+    <h2>โปรโมชั่น 🎉</h2>
+    <p>ตอนนี้ยังไม่มีโปรโมชั่นพิเศษ แต่เร็วๆ นี้จะมีส่วนลดดีๆ มาอัพเดตให้แน่นอน</p>
+  </div>
+  <div class="promo-empty reveal-up">
+    <div class="promo-empty-ic">🎁</div>
+    <p>อย่าลืมเพิ่มเพื่อน LINE ร้านไว้ จะได้ไม่พลาดโปรโมชั่นและข่าวสารใหม่ๆ</p>
+    <a href="https://line.me/R/ti/p/@krua-janprod" target="_blank" rel="noopener" class="btn-primary">💬 เพิ่มเพื่อน LINE ร้าน</a>
+  </div>
+</section>
+
+<!-- ================= REVIEWS (รีวิวลูกค้า) ================= -->
+<section class="section" id="reviews">
+  <div class="section-head reveal-up">
+    <span class="kicker">เสียงจากลูกค้า</span>
+    <h2>รีวิวลูกค้า ⭐</h2>
+    <p>เร็วๆ นี้จะนำรีวิวจริงจากลูกค้ามาอัพเดตให้ชมกันที่นี่</p>
+  </div>
+  <div class="review-empty reveal-up">
+    <div class="review-empty-ic">💬</div>
+    <p>ยังไม่มีรีวิวแสดงตอนนี้ — รอติดตามรีวิวจริงจากลูกค้าเร็วๆ นี้นะครับ</p>
+  </div>
+  <!-- วิธีเพิ่มรีวิวจริงทีหลัง: คัดลอกโครงสร้าง .review-grid/.review-card ด้านล่างนี้
+       ไปวางแทนที่ <div class="review-empty">...</div> ด้านบน แล้วเพิ่ม .review-card
+       ได้เรื่อยๆ ทีละรีวิว (คลาส .review-grid จัดเรียงเป็นกริดให้อัตโนมัติ)
+  <div class="review-grid">
+    <div class="review-card">
+      <div class="review-stars">★★★★★</div>
+      <p class="review-text">"ข้าวไข่ข้นอร่อยมาก ส่งไวด้วยครับ"</p>
+      <div class="review-name">— ชื่อลูกค้า</div>
+    </div>
+  </div>
+  -->
+</section>
+
+<!-- ================= FAQ (คำถามที่พบบ่อย) ================= -->
+<section class="section" id="faq">
+  <div class="section-head reveal-up">
+    <span class="kicker">มีคำถาม เรามีคำตอบ</span>
+    <h2>คำถามที่พบบ่อย</h2>
+  </div>
+  <div class="faq-list">
+    <details class="faq-item reveal-up">
+      <summary>ชำระเงินยังไง?</summary>
+      <p>โอนเงินผ่านพร้อมเพย์ตามยอด QR ที่ขึ้นให้อัตโนมัติตอนสั่งซื้อ แล้วแนบสลิปได้เลยตอนกรอกออเดอร์ (หรือส่งสลิปทาง LINE ร้านภายหลังก็ได้) ส่วนค่าส่งชำระเป็นเงินสดกับพนักงานส่งตอนได้รับของ</p>
+    </details>
+    <details class="faq-item reveal-up">
+      <summary>ยกเลิกออเดอร์ได้ไหม?</summary>
+      <p>ได้ครับ ถ้าร้านยังไม่เริ่มทำ (สถานะยังเป็น "ออเดอร์ใหม่") กดยกเลิกเองได้เลยที่หน้า "📦 ติดตามออเดอร์" แต่ถ้าร้านเริ่มทำแล้ว รบกวนติดต่อร้านโดยตรงทาง LINE หรือโทรศัพท์</p>
+    </details>
+    <details class="faq-item reveal-up">
+      <summary>ติดตามสถานะออเดอร์ยังไง?</summary>
+      <p>กดปุ่ม "📦 ติดตามออเดอร์" ที่เมนูด้านบนหรือท้ายเว็บ แล้วใส่เบอร์โทรที่ใช้ตอนสั่งซื้อ ระบบจะแสดงออเดอร์ทั้งหมดของเบอร์นั้นให้ทันที ไม่ต้องสมัครสมาชิก</p>
+    </details>
+    <details class="faq-item reveal-up">
+      <summary>แต้มสะสมคำนวณยังไง?</summary>
+      <p>ทุกๆ 10 บาทที่สั่ง รับ 1 แต้มสะสมอัตโนมัติ เช็คแต้มของตัวเองได้ที่ปุ่ม "🎁 แต้มสะสม" ด้วยเบอร์โทรเดียวกับตอนสั่งซื้อ</p>
+    </details>
+    <details class="faq-item reveal-up">
+      <summary>ส่งพื้นที่ไหนบ้าง?</summary>
+      <p>ทีมงานจะแจ้งพื้นที่จัดส่งและค่าส่งให้ทราบตอนติดต่อกลับหลังสั่งซื้อ</p>
+    </details>
+    <details class="faq-item reveal-up">
+      <summary>ร้านเปิดกี่โมง?</summary>
+      <p>เปิดทุกวัน 10:00–22:00 น. ถ้าร้านปิดรับออเดอร์ชั่วคราว จะมีแบนเนอร์แจ้งไว้ด้านบนของเว็บให้เห็นชัดเจน</p>
+    </details>
+  </div>
+</section>
+
 <!-- ================= FOOTER ================= -->
 <footer id="contact">
   <div class="footer-inner">
@@ -1665,6 +1773,14 @@
         <li>💬 LINE: <a href="https://line.me/R/ti/p/@krua-janprod" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">@krua-janprod</a></li>
         <li>📍 พื้นที่จัดส่ง: แจ้งเมื่อสั่งซื้อ</li>
         <li>⏰ เปิดทุกวัน 10:00–22:00 น.</li>
+      </ul>
+    </div>
+    <div>
+      <h5>ข้อมูลเพิ่มเติม</h5>
+      <ul>
+        <li><a href="#promotions">โปรโมชั่น</a></li>
+        <li><a href="#reviews">รีวิวลูกค้า</a></li>
+        <li><a href="#faq">คำถามที่พบบ่อย</a></li>
       </ul>
     </div>
   </div>
@@ -1893,24 +2009,38 @@
         <button id="adminLogoutBtn">ออกจากระบบ</button>
       </div>
     </div>
-    <div class="admin-stats">
-      <div class="admin-stat"><div class="num" id="statTodayOrders">0</div><div class="lbl">ออเดอร์วันนี้</div></div>
-      <div class="admin-stat"><div class="num" id="statTodayRevenue">0</div><div class="lbl">ยอดขายวันนี้ (บาท)</div></div>
-      <div class="admin-stat"><div class="num" id="statAllOrders">0</div><div class="lbl">ออเดอร์ทั้งหมด</div></div>
-      <div class="admin-stat"><div class="num" id="statAllRevenue">0</div><div class="lbl">ยอดขายทั้งหมด (บาท)</div></div>
+    <div class="admin-tabs" id="adminTabs">
+      <button type="button" class="admin-tab-btn" data-tab="overview">📊 ภาพรวม</button>
+      <button type="button" class="admin-tab-btn active" data-tab="orders">🧾 ออเดอร์</button>
+      <button type="button" class="admin-tab-btn" data-tab="customers">🎁 ลูกค้า</button>
     </div>
-    <h4 class="admin-daily-heading">📅 ยอดขายแยกรายวัน</h4>
-    <div class="admin-daily" id="adminDailyList"></div>
-    <div class="admin-points-tool">
-      <h4 class="admin-daily-heading">🎁 เช็ค/แลกแต้มสะสมลูกค้า</h4>
-      <div class="admin-points-row">
-        <input type="text" id="adminPointsPhoneInput" placeholder="เบอร์โทรลูกค้า">
-        <button type="button" id="adminPointsCheckBtn">เช็คแต้ม</button>
+
+    <div class="admin-tab-panel" data-panel="overview" style="display:none;">
+      <div class="admin-stats">
+        <div class="admin-stat"><div class="num" id="statTodayOrders">0</div><div class="lbl">ออเดอร์วันนี้</div></div>
+        <div class="admin-stat"><div class="num" id="statTodayRevenue">0</div><div class="lbl">ยอดขายวันนี้ (บาท)</div></div>
+        <div class="admin-stat"><div class="num" id="statAllOrders">0</div><div class="lbl">ออเดอร์ทั้งหมด</div></div>
+        <div class="admin-stat"><div class="num" id="statAllRevenue">0</div><div class="lbl">ยอดขายทั้งหมด (บาท)</div></div>
       </div>
-      <div class="admin-points-result" id="adminPointsResult"></div>
+      <h4 class="admin-daily-heading">📅 ยอดขายแยกรายวัน</h4>
+      <div class="admin-daily" id="adminDailyList"></div>
     </div>
-    <div class="admin-orders" id="adminOrdersList">
-      <div class="admin-empty">กำลังโหลดออเดอร์...</div>
+
+    <div class="admin-tab-panel" data-panel="orders">
+      <div class="admin-orders" id="adminOrdersList">
+        <div class="admin-empty">กำลังโหลดออเดอร์...</div>
+      </div>
+    </div>
+
+    <div class="admin-tab-panel" data-panel="customers" style="display:none;">
+      <div class="admin-points-tool">
+        <h4 class="admin-daily-heading">🎁 เช็ค/แลกแต้มสะสมลูกค้า</h4>
+        <div class="admin-points-row">
+          <input type="text" id="adminPointsPhoneInput" placeholder="เบอร์โทรลูกค้า">
+          <button type="button" id="adminPointsCheckBtn">เช็คแต้ม</button>
+        </div>
+        <div class="admin-points-result" id="adminPointsResult"></div>
+      </div>
     </div>
     <div class="admin-note">กด "🔔 เปิดแจ้งเตือน" เพื่อรับแจ้งเตือนออเดอร์ใหม่แบบ Push จริง (มีเสียง มีป๊อปอัประบบ) เด้งได้แม้ปิดเบราว์เซอร์หรือล็อกหน้าจอ — บน iPhone ต้องกด แชร์ ▸ เพิ่มไปยังหน้าจอโฮม แล้วเปิดเว็บจากไอคอนนั้นก่อน 1 ครั้ง ถึงจะกดรับแจ้งเตือนได้ (ข้อจำกัดของ Safari) ถ้าไม่สะดวก ระบบจะยังแจ้งเตือนด้วยเสียง/ป๊อปอัปตามปกติทุกครั้งที่เปิดหน้าต่างนี้ค้างไว้เหมือนเดิม</div>
   </div>
@@ -3324,6 +3454,17 @@ toppingOverlay.addEventListener("click",(e)=>{
   }
   const adminSyncSheetsBtn = document.getElementById("adminSyncSheetsBtn");
   if(adminSyncSheetsBtn) adminSyncSheetsBtn.addEventListener("click", syncAllToSheets);
+
+  /* ---------- แทปในหลังบ้าน (ภาพรวม / ออเดอร์ / ลูกค้า) ---------- */
+  document.querySelectorAll(".admin-tab-btn").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const tab = btn.dataset.tab;
+      document.querySelectorAll(".admin-tab-btn").forEach(b=> b.classList.toggle("active", b===btn));
+      document.querySelectorAll(".admin-tab-panel").forEach(p=>{
+        p.style.display = (p.dataset.panel === tab) ? "" : "none";
+      });
+    });
+  });
 
   document.getElementById("adminRefreshBtn").addEventListener("click", ()=> loadDashboard(false));
   ordersList.addEventListener("focusin", (e)=>{
